@@ -16,13 +16,12 @@ RUN set -ex; \
         libldap2-dev \
         libzmq3-dev \
         zlib1g-dev \
-        wget \
-        cron \
+        git \
     ; \
     \
 # Install php-zmq
     cd /home; \
-    wget https://github.com/zeromq/libzmq/releases/download/v4.3.2/zeromq-4.3.2.tar.gz; \
+    curl -fSL https://github.com/zeromq/libzmq/releases/download/v4.3.2/zeromq-4.3.2.tar.gz -o zeromq-4.3.2.tar.gz; \
     tar -xvzf zeromq-4.3.2.tar.gz; \
     cd /home/zeromq-4.3.2; \
     ./configure; \
@@ -63,7 +62,14 @@ RUN set -ex; \
         | sort -u \
         | xargs -rt apt-mark manual; \
     \
-    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
+
+# Install required libs
+RUN set -ex; \
+    apt-get install -y --no-install-recommends \
+        cron \
+        unzip \
+    ; \
     rm -rf /var/lib/apt/lists/*
 
 # php.ini
@@ -86,8 +92,15 @@ RUN echo "UTC" > /etc/timezone && dpkg-reconfigure --frontend noninteractive tzd
 VOLUME /var/www/html
 
 ENV ESPOCRM_VERSION 5.7.7
-ENV ESPOCRM_DOWNLOAD_URL="https://www.espocrm.com/downloads/EspoCRM-5.7.7.zip"
-ENV ESPOCRM_SHA256="a32e68e687c23e725498705fb03673211aac4300e392aaba800086a77c3a7410"
+ENV ESPOCRM_SHA256 a32e68e687c23e725498705fb03673211aac4300e392aaba800086a77c3a7410
+
+RUN set -ex; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-5.7.7.zip" -o EspoCRM.zip; \
+	echo "$ESPOCRM_SHA256 *EspoCRM.zip" | sha256sum -c -; \
+    unzip -q EspoCRM.zip -d /usr/src; \
+    mv "/usr/src/EspoCRM-5.7.7" /usr/src/espocrm; \
+	chown -R www-data:www-data /usr/src/espocrm; \
+    rm EspoCRM.zip
 
 COPY ./docker-entrypoint.sh /usr/local/bin/
 ENTRYPOINT [ "docker-entrypoint.sh" ]
