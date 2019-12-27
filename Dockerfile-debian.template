@@ -94,13 +94,18 @@ VOLUME /var/www/html
 ENV ESPOCRM_VERSION %%ESPOCRM_VERSION%%
 ENV ESPOCRM_SHA256 %%ESPOCRM_SHA256%%
 
+ENV ESPOCRM_UPGRADE_VERSION %%ESPOCRM_UPGRADE_VERSION%%
+ENV ESPOCRM_UPGRADE_URL %%ESPOCRM_UPGRADE_URL%%
+ENV ESPOCRM_UPGRADE_SHA256 %%ESPOCRM_UPGRADE_SHA256%%
+
 RUN set -ex; \
     curl -fSL "%%ESPOCRM_DOWNLOAD_URL%%" -o EspoCRM.zip; \
 	echo "$ESPOCRM_SHA256 *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
     mv "/usr/src/EspoCRM-%%ESPOCRM_VERSION%%" /usr/src/espocrm; \
 	chown -R www-data:www-data /usr/src/espocrm; \
-    rm EspoCRM.zip
+    rm EspoCRM.zip; \
+    mkdir /usr/src/espocrm-upgrades
 
 COPY ./docker-entrypoint.sh /usr/local/bin/
 ENTRYPOINT [ "docker-entrypoint.sh" ]

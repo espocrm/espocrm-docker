@@ -91,16 +91,21 @@ RUN echo "UTC" > /etc/timezone && dpkg-reconfigure --frontend noninteractive tzd
 
 VOLUME /var/www/html
 
-ENV ESPOCRM_VERSION 5.7.7
-ENV ESPOCRM_SHA256 a32e68e687c23e725498705fb03673211aac4300e392aaba800086a77c3a7410
+ENV ESPOCRM_VERSION 5.7.11
+ENV ESPOCRM_SHA256 1138309020520da2f358494c1488722cfe89efed93e30f23a5561a6b7272e342
+
+ENV ESPOCRM_UPGRADE_VERSION 5.6.14
+ENV ESPOCRM_UPGRADE_URL https://www.espocrm.com/downloads/upgrades/EspoCRM-upgrade-5.6.14-to-5.7.11.zip
+ENV ESPOCRM_UPGRADE_SHA256 81ebc597d8016c3ce9bfbbaf6366c3e40a4a45780bf669a290f8b75b92822fce
 
 RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-5.7.7.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-5.7.11.zip" -o EspoCRM.zip; \
 	echo "$ESPOCRM_SHA256 *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-5.7.7" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-5.7.11" /usr/src/espocrm; \
 	chown -R www-data:www-data /usr/src/espocrm; \
-    rm EspoCRM.zip
+    rm EspoCRM.zip; \
+    mkdir /usr/src/espocrm-upgrades
 
 COPY ./docker-entrypoint.sh /usr/local/bin/
 ENTRYPOINT [ "docker-entrypoint.sh" ]
