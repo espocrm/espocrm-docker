@@ -89,7 +89,9 @@ RUN { \
 # Set timezone
 RUN echo "UTC" > /etc/timezone && dpkg-reconfigure --frontend noninteractive tzdata
 %%ADDITIONS%%
-VOLUME /var/www/html
+ENV DOCUMENT_ROOT /var/www/html
+ENV DEFAULT_OWNER www-data
+ENV DEFAULT_GROUP www-data
 
 ENV ESPOCRM_VERSION %%ESPOCRM_VERSION%%
 ENV ESPOCRM_SHA256 %%ESPOCRM_SHA256%%
@@ -98,16 +100,20 @@ ENV ESPOCRM_UPGRADE_VERSION %%ESPOCRM_UPGRADE_VERSION%%
 ENV ESPOCRM_UPGRADE_URL %%ESPOCRM_UPGRADE_URL%%
 ENV ESPOCRM_UPGRADE_SHA256 %%ESPOCRM_UPGRADE_SHA256%%
 
+VOLUME ${DOCUMENT_ROOT}
+
 RUN set -ex; \
     curl -fSL "%%ESPOCRM_DOWNLOAD_URL%%" -o EspoCRM.zip; \
-	echo "$ESPOCRM_SHA256 *EspoCRM.zip" | sha256sum -c -; \
+	echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
     mv "/usr/src/EspoCRM-%%ESPOCRM_VERSION%%" /usr/src/espocrm; \
-	chown -R www-data:www-data /usr/src/espocrm; \
-    rm EspoCRM.zip; \
-    mkdir /usr/src/espocrm-upgrades
+	rm EspoCRM.zip; \
+    mkdir /usr/src/espocrm-upgrades; \
+    chown -R ${DEFAULT_OWNER}:${DEFAULT_GROUP} /usr/src/espocrm /usr/src/espocrm-upgrades
 
 COPY ./docker-entrypoint.sh /usr/local/bin/
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 
-CMD ["%%CMD%%"]
+RUN (crontab -l -u ${DEFAULT_OWNER}; echo "* * * * * cd ${DOCUMENT_ROOT}; /usr/local/bin/php -f cron.php > /dev/null 2>&1") | crontab - -u ${DEFAULT_OWNER}
+
+CMD ["sh", "-c", "cron && %%CMD%%"]

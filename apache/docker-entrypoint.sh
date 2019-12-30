@@ -151,18 +151,12 @@ runInstallationStep() {
 # ------------------------- START -------------------------------------
 # Global variables
 SOURCE_FILES="/usr/src/espocrm"
-DOCUMENT_ROOT="/var/www/html"
-DEFAULT_OWNER="www-data"
-DEFAULT_GROUP="www-data"
-
-declare -a REQUIRED_PARAMS=(
-    'ESPOCRM_DATABASE_PASSWORD'
-)
 
 declare -A DEFAULTS=(
     ['ESPOCRM_DATABASE_HOST']='mysql'
     ['ESPOCRM_DATABASE_NAME']='espocrm'
     ['ESPOCRM_DATABASE_USER']='root'
+    ['ESPOCRM_DATABASE_PASSWORD']='pasword'
     ['ESPOCRM_ADMIN_USERNAME']='admin'
     ['ESPOCRM_ADMIN_PASSWORD']='pasword'
     ['ESPOCRM_LANGUAGE']='en_US'
@@ -179,14 +173,6 @@ declare -A OPTIONAL_PARAMS=(
     ['thousandSeparator']='ESPOCRM_THOUSAND_SEPARATOR'
     ['decimalMark']='ESPOCRM_DECIMAL_MARK'
 )
-
-for requiredParam in "${REQUIRED_PARAMS[@]}"
-do
-    if [ -z "${!requiredParam-}" ]; then
-        echo >&2 "error: Parameter \"$requiredParam\" is required."
-        exit 1
-    fi
-done
 
 for defaultParam in "${!DEFAULTS[@]}"
 do
