@@ -23,6 +23,7 @@ RUN set -ex; \
     cd /home; \
     curl -fSL https://github.com/zeromq/libzmq/releases/download/v4.3.2/zeromq-4.3.2.tar.gz -o zeromq-4.3.2.tar.gz; \
     tar -xvzf zeromq-4.3.2.tar.gz; \
+    rm zeromq-4.3.2.tar.gz; \
     cd /home/zeromq-4.3.2; \
     ./configure; \
     make; \
@@ -37,8 +38,6 @@ RUN set -ex; \
     make install; \
     \
 # END Instalation php-zmq
-    pecl install mailparse; \
-    \
     docker-php-ext-install pdo_mysql; \
     docker-php-ext-install zip; \
     docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
@@ -48,7 +47,6 @@ RUN set -ex; \
     docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/; \
     docker-php-ext-install ldap; \
     docker-php-ext-install exif; \
-    docker-php-ext-enable mailparse; \
     docker-php-ext-enable zmq; \
     \
 # reset a list of apt-mark
