@@ -1,74 +1,48 @@
-FROM php:7.3-fpm
+FROM php:7.3-fpm-alpine
 
 # Install php libs
 RUN set -ex; \
-    \
-    aptMarkList="$(apt-mark showmanual)"; \
-    \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-        libjpeg-dev \
-        libpng-dev \
+    apk update; \
+    apk add --no-cache --virtual .build-deps \
         libzip-dev \
-        libxml2-dev \
-        libc-client-dev \
-        libkrb5-dev \
-        libldap2-dev \
-        libzmq3-dev \
-        zlib1g-dev \
+        libpng-dev \
+        libjpeg-turbo-dev \
+        libwebp-dev \
+        php7-gd \
+        php7-exif \
+        openldap-dev \
+        imap-dev \
         git \
+        bash \
+        $PHPIZE_DEPS \
     ; \
     \
 # Install php-zmq
-    cd /home; \
+    cd /usr; \
     curl -fSL https://github.com/zeromq/libzmq/releases/download/v4.3.2/zeromq-4.3.2.tar.gz -o zeromq-4.3.2.tar.gz; \
     tar -xvzf zeromq-4.3.2.tar.gz; \
     rm zeromq-4.3.2.tar.gz; \
-    cd /home/zeromq-4.3.2; \
+    cd /usr/zeromq-4.3.2; \
     ./configure; \
     make; \
     make install; \
-    ldconfig; \
-    ldconfig -p | grep zmq; \
-    cd /home; \
+    cd /usr; \
     git clone git://github.com/mkoppanen/php-zmq.git; \
-    cd /home/php-zmq; \
+    cd /usr/php-zmq; \
     phpize && ./configure; \
     make; \
     make install; \
     \
 # END Instalation php-zmq
-    docker-php-ext-install pdo_mysql; \
-    docker-php-ext-install zip; \
-    docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
+    docker-php-ext-configure gd --with-jpeg-dir=/usr/include/ --with-webp-dir=/usr/include/; \
     docker-php-ext-install gd; \
-    docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
-    docker-php-ext-install imap; \
-    docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/; \
-    docker-php-ext-install ldap; \
     docker-php-ext-install exif; \
-    docker-php-ext-enable zmq; \
-    \
-# reset a list of apt-mark
-    apt-mark auto '.*' > /dev/null; \
-    apt-mark manual $aptMarkList; \
-    ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-        | awk '/=>/ { print $3 }' \
-        | sort -u \
-        | xargs -r dpkg-query -S \
-        | cut -d: -f1 \
-        | sort -u \
-        | xargs -rt apt-mark manual; \
-    \
-    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
-
-# Install required libs
-RUN set -ex; \
-    apt-get install -y --no-install-recommends \
-        cron \
-        unzip \
-    ; \
-    rm -rf /var/lib/apt/lists/*
+    docker-php-ext-install ldap; \
+    docker-php-ext-install imap; \
+    docker-php-ext-install pcntl; \
+    docker-php-ext-install zip; \
+    docker-php-ext-install pdo_mysql; \
+    docker-php-ext-enable zmq
 
 # php.ini
 RUN { \
@@ -83,9 +57,6 @@ RUN { \
 	echo 'upload_max_filesize=30M'; \
 	echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
-
-# Set timezone
-RUN echo "UTC" > /etc/timezone && dpkg-reconfigure --frontend noninteractive tzdata
 
 ENV DOCUMENT_ROOT /var/www/html
 ENV DEFAULT_OWNER www-data
@@ -114,4 +85,4 @@ ENTRYPOINT [ "docker-entrypoint.sh" ]
 
 RUN (crontab -l -u ${DEFAULT_OWNER}; echo "* * * * * cd ${DOCUMENT_ROOT}; /usr/local/bin/php -f cron.php > /dev/null 2>&1") | crontab - -u ${DEFAULT_OWNER}
 
-CMD ["sh", "-c", "cron && php-fpm"]
+CMD ["sh", "-c", "crond && php-fpm"]
