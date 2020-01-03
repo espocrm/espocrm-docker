@@ -51,7 +51,11 @@ declare -a variantList=(
 
 declare -a architectures=(
 	'amd64'
+	'arm32v5'
+	'arm32v7'
+	'arm64v8'
 	'i386'
+	'ppc64le'
 )
 
 for variant in "${variantList[@]}"

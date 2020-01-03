@@ -19,16 +19,19 @@ upgradeSha256=$(echo $upgradeRelease | jq -r '.packageSha256')
 declare variantList=(
 	'apache'
 	'fpm'
+    'fpm-alpine'
 )
 
 declare -A distributions=(
 	[apache]='debian'
 	[fpm]='debian'
+    [fpm-alpine]='alpine'
 )
 
 declare -A cmds=(
 	[apache]='apache2-foreground'
 	[fpm]='php-fpm'
+    [fpm-alpine]='php-fpm'
 )
 
 declare -A additions=(
@@ -36,6 +39,7 @@ declare -A additions=(
 RUN a2enmod rewrite;\
 '
 	[fpm]=''
+    [fpm-alpine]=''
 )
 
 travisEnv=
