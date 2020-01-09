@@ -1,4 +1,4 @@
-## Docker Official Image for EspoCRM
+## Official Docker Image for EspoCRM
 
 This repository is the official Docker image for EspoCRM.
 
