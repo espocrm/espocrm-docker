@@ -40,7 +40,7 @@ volumes:
   espocrm:
 ```
 
-Run `docker stack deploy -c stack.yml %%REPO%%` (or `docker-compose -f stack.yml up`), wait for it to initialize completely, and visit `http://localhost:8080`.
+Run `docker stack deploy -c stack.yml espocrm` (or `docker-compose -f stack.yml up`), wait for it to initialize completely, and visit `http://localhost:8080`.
 
 ### Documentation
 
@@ -48,4 +48,4 @@ Documentation for administrators, users and developers is available [here](https
 
 ### License
 
-EspoCRM is published under the GNU GPLv3 [license](https://raw.githubusercontent.com/espocrm/espocrm/master/LICENSE.txt).
+EspoCRM is published under the GNU GPLv3 [license](https://raw.githubusercontent.com/espocrm/docker/master/LICENSE).
