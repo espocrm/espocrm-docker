@@ -47,6 +47,7 @@ defaultVariant="apache"
 declare -a variantList=(
 	'apache'
 	'fpm'
+    'fpm-alpine'
 )
 
 declare -a architectures=(
