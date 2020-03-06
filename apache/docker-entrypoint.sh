@@ -119,7 +119,15 @@ installEspocrm() {
     done
 
     runInstallationStep "step1" "user-lang=${ESPOCRM_LANGUAGE}"
-    runInstallationStep "settingsTest" "hostName=${ESPOCRM_DATABASE_HOST}&dbName=${ESPOCRM_DATABASE_NAME}&dbUserName=${ESPOCRM_DATABASE_USER}&dbUserPass=${ESPOCRM_DATABASE_PASSWORD}"
+
+    settingsTestResult=$(runInstallationStep "settingsTest" "hostName=${ESPOCRM_DATABASE_HOST}&dbName=${ESPOCRM_DATABASE_NAME}&dbUserName=${ESPOCRM_DATABASE_USER}&dbUserPass=${ESPOCRM_DATABASE_PASSWORD}" true 2>&1)
+
+    if [[ "$settingsTestResult" == *"Error:"* ]] && [[ "$settingsTestResult" == *"[errorCode] => 2002"* ]]; then
+        echo >&2 "$settingsTestResult"
+        echo >&2 "warning: Cannot connecting to MySQL server. Continuing anyway"
+        return
+    fi
+
     runInstallationStep "setupConfirmation" "host-name=${ESPOCRM_DATABASE_HOST}&db-name=${ESPOCRM_DATABASE_NAME}&db-user-name=${ESPOCRM_DATABASE_USER}&db-user-password=${ESPOCRM_DATABASE_PASSWORD}"
     runInstallationStep "checkPermission"
     runInstallationStep "saveSettings" "site-url=${ESPOCRM_SITE_URL}&default-permissions-user=${DEFAULT_OWNER}&default-permissions-group=${DEFAULT_GROUP}"
@@ -133,6 +141,7 @@ installEspocrm() {
 
 runInstallationStep() {
     local actionName="$1"
+    local returnResult=${3-false}
 
     if [ -n "${2-}" ]; then
         local data="$2"
@@ -141,8 +150,13 @@ runInstallationStep() {
         local result=$(php install/cli.php -a "$actionName")
     fi
 
+    if [ "$returnResult" = true ]; then
+        echo >&2 "$result"
+        return
+    fi
+
     if [[ "$result" == *"Error:"* ]]; then
-        echo >&2 "error: installation error, more details:"
+        echo >&2 "error: Installation error, more details:"
         echo >&2 "$result"
         exit 1
     fi
@@ -206,7 +220,7 @@ case $installationType in
         ;;
 
     *)
-        echo >&2 "error: uknown installation type [$installationType]"
+        echo >&2 "error: Uknown installation type [$installationType]"
         exit 1
         ;;
 esac
