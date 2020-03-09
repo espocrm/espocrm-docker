@@ -34,7 +34,7 @@ join() {
 	echo "${out#$sep}"
 }
 
-generateCommit="$(fileCommit "$self")"
+generateCommit="$(fileCommit "$@")"
 
 cat <<-EOH
 # this file is generated via https://github.com/espocrm/docker/blob/$generateCommit/$self
