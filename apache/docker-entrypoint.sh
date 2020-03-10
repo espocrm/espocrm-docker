@@ -60,6 +60,13 @@ actionReinstall() {
 }
 
 actionUpgrade() {
+    UPGRADE_NUMBER=$((UPGRADE_NUMBER+1))
+
+    if [ $UPGRADE_NUMBER -gt $MAX_UPGRADE_COUNT ];then
+        echo >&2 "The MAX_UPGRADE_COUNT exceded. The upgrading process has been stopped."
+        return
+    fi
+
     local installedVersion=$(php -r "\$config=include('$DOCUMENT_ROOT/data/config.php'); echo \$config['version'];")
     local isVersionEqual=$(compareVersion "$installedVersion" "$ESPOCRM_VERSION" ">=")
 
@@ -173,6 +180,7 @@ runInstallationStep() {
 # ------------------------- START -------------------------------------
 # Global variables
 SOURCE_FILES="/usr/src/espocrm"
+MAX_UPGRADE_COUNT=100
 
 declare -A DEFAULTS=(
     ['ESPOCRM_DATABASE_HOST']='mysql'
@@ -220,6 +228,7 @@ case $installationType in
 
     upgrade)
         echo >&2 "Run \"upgrade\" action."
+        UPGRADE_NUMBER=0
         actionUpgrade
         chown -R $DEFAULT_OWNER:$DEFAULT_GROUP "$DOCUMENT_ROOT"
         ;;
