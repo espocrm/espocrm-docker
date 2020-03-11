@@ -44,19 +44,17 @@ GitCommit: $generateCommit
 EOH
 
 defaultVariant="apache"
+
 declare -a variantList=(
 	'apache'
 	'fpm'
 	'fpm-alpine'
 )
 
-declare -a architectures=(
-	'amd64'
-	'arm32v5'
-	'arm32v7'
-	'arm64v8'
-	'i386'
-	'ppc64le'
+declare -A architectures=(
+	[apache]="amd64, arm32v5, arm32v7, arm64v8, i386, ppc64le"
+	[fpm]="amd64, arm32v5, arm32v7, arm64v8, i386, ppc64le"
+	[fpm-alpine]="amd64, arm32v6, arm32v7, arm64v8, i386, ppc64le"
 )
 
 for variant in "${variantList[@]}"
@@ -85,7 +83,7 @@ do
 	echo
 	cat <<-EOE
 		Tags: $(join ', ' "${tags[@]}")
-		Architectures: $(join ', ' "${architectures[@]}")
+		Architectures: ${architectures[$variant]}
 		Directory: $dir
 	EOE
 
