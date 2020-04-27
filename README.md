@@ -44,7 +44,7 @@ Run `docker stack deploy -c stack.yml espocrm` (or `docker-compose -f stack.yml 
 
 ### Documentation
 
-Documentation for administrators, users and developers is available [here](https://www.espocrm.com/documentation/).
+Documentation for administrators, users and developers is available [here](https://docs.espocrm.com).
 
 ### License
 
