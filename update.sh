@@ -17,28 +17,28 @@ upgradeDownnloadUrl=$(echo $upgradeRelease | jq -r '.package')
 upgradeSha256=$(echo $upgradeRelease | jq -r '.packageSha256')
 
 declare variantList=(
-	'apache'
-	'fpm'
+    'apache'
+    'fpm'
     'fpm-alpine'
 )
 
 declare -A distributions=(
-	[apache]='debian'
-	[fpm]='debian'
+    [apache]='debian'
+    [fpm]='debian'
     [fpm-alpine]='alpine'
 )
 
 declare -A cmds=(
-	[apache]='apache2-foreground'
-	[fpm]='php-fpm'
+    [apache]='apache2-foreground'
+    [fpm]='php-fpm'
     [fpm-alpine]='php-fpm'
 )
 
 declare -A additions=(
-	[apache]='\
+    [apache]='\
 RUN a2enmod rewrite;\
 '
-	[fpm]=''
+    [fpm]=''
     [fpm-alpine]=''
 )
 

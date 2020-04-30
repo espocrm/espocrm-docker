@@ -6,7 +6,7 @@ installationType() {
     if [ -f "$DOCUMENT_ROOT/data/config.php" ]; then
         local isInstalled=$(php -r "\$config=include('$DOCUMENT_ROOT/data/config.php'); echo \$config['isInstalled'];")
 
-        if [ -n "$isInstalled" ]; then
+        if [ -n "$isInstalled" ] && [ "$isInstalled" = 1 ]; then
             local installedVersion=$(php -r "\$config=include('$DOCUMENT_ROOT/data/config.php'); echo \$config['version'];")
             local isVersionGreater=$(compareVersion "$ESPOCRM_VERSION" "$installedVersion" ">")
 
@@ -35,9 +35,9 @@ compareVersion() {
 }
 
 join() {
-	local sep="$1"; shift
-	local out; printf -v out "${sep//%/%%}%s" "$@"
-	echo "${out#$sep}"
+    local sep="$1"; shift
+    local out; printf -v out "${sep//%/%%}%s" "$@"
+    echo "${out#$sep}"
 }
 
 actionInstall() {

@@ -27,7 +27,7 @@ RUN set -ex; \
     make; \
     make install; \
     cd /usr; \
-    git clone git://github.com/mkoppanen/php-zmq.git; \
+    git clone https://github.com/zeromq/php-zmq.git; \
     cd /usr/php-zmq; \
     phpize && ./configure; \
     make; \
