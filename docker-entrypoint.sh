@@ -78,7 +78,7 @@ actionUpgrade() {
     if [ $installedVersion == $ESPOCRM_UPGRADE_VERSION ]; then
         local upgradePackage="/usr/src/espocrm-upgrades/upgrade-$ESPOCRM_UPGRADE_VERSION-$ESPOCRM_VERSION.zip"
         curl -fSL "$ESPOCRM_UPGRADE_URL" -o "$upgradePackage"
-        if ! echo "$ESPOCRM_UPGRADE_SHA256 $upgradePackage" | sha256sum -c -; then
+        if ! echo "$ESPOCRM_UPGRADE_SHA256 *$upgradePackage" | sha256sum -c -; then
             echo >&2 "error: Checksum for upgrade package is failed."
             exit 1
         fi
