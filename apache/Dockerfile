@@ -93,20 +93,20 @@ ENV DOCUMENT_ROOT /var/www/html
 ENV DEFAULT_OWNER www-data
 ENV DEFAULT_GROUP www-data
 
-ENV ESPOCRM_VERSION 5.9.1
-ENV ESPOCRM_SHA256 f2d10b1ec93aa11238af7b3ca28a78e25af0488a0c62005109037f1db8e45c8f
+ENV ESPOCRM_VERSION 5.9.2
+ENV ESPOCRM_SHA256 612c825917318d6182ab60b62bfaf8a917de7682c276b79dd56d8bdc1b43f903
 
 ENV ESPOCRM_UPGRADE_VERSION 5.8.5
-ENV ESPOCRM_UPGRADE_URL https://www.espocrm.com/downloads/upgrades/EspoCRM-upgrade-5.8.5-to-5.9.1.zip
-ENV ESPOCRM_UPGRADE_SHA256 378c23568a18f4586c6cf6399db3800d999eff6b4db105960bf45bc83e4a2955
+ENV ESPOCRM_UPGRADE_URL https://www.espocrm.com/downloads/upgrades/EspoCRM-upgrade-5.8.5-to-5.9.2.zip
+ENV ESPOCRM_UPGRADE_SHA256 2ce5dd43960b8c11b50bf66dc0fcf9e9a1499ca54be64864cf7dd4fdb6cb8f72
 
 VOLUME ${DOCUMENT_ROOT}
 
 RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-5.9.1.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-5.9.2.zip" -o EspoCRM.zip; \
 	echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-5.9.1" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-5.9.2" /usr/src/espocrm; \
 	rm EspoCRM.zip; \
     mkdir /usr/src/espocrm-upgrades; \
     chown -R ${DEFAULT_OWNER}:${DEFAULT_GROUP} /usr/src/espocrm /usr/src/espocrm-upgrades
