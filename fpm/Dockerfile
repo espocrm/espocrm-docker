@@ -55,10 +55,13 @@ RUN set -ex; \
 # Install required libs
 RUN set -ex; \
     apt-get install -y --no-install-recommends \
-        cron \
         unzip \
+        busybox-static \
     ; \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*; \
+    \
+    mkdir -p /var/spool/cron/crontabs; \
+    echo '* * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1' > /var/spool/cron/crontabs/www-data
 
 # php.ini
 RUN { \
@@ -97,8 +100,7 @@ RUN set -ex; \
     chown -R ${DEFAULT_OWNER}:${DEFAULT_GROUP} /usr/src/espocrm /usr/src/espocrm-upgrades
 
 COPY ./docker-entrypoint.sh /usr/local/bin/
+COPY ./docker-cron.sh /usr/local/bin/
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 
-RUN (crontab -l -u ${DEFAULT_OWNER}; echo "* * * * * cd ${DOCUMENT_ROOT}; /usr/local/bin/php -f cron.php > /dev/null 2>&1") | crontab - -u ${DEFAULT_OWNER}
-
-CMD ["sh", "-c", "cron && php-fpm"]
+CMD ["php-fpm"]

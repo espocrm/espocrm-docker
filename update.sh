@@ -64,6 +64,7 @@ do
 		"./Dockerfile-$dist.template" > "$variant/Dockerfile"
 
     cp docker-entrypoint.sh "$variant/docker-entrypoint.sh"
+    cp docker-cron.sh "$variant/docker-cron.sh"
 
 	travisEnv+='\n  - VARIANT='"$variant"
 done

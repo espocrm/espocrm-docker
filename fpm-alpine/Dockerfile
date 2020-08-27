@@ -35,6 +35,10 @@ RUN set -ex; \
     docker-php-ext-install pdo_mysql; \
     docker-php-ext-enable zmq
 
+RUN set -ex; \
+    rm /var/spool/cron/crontabs/root; \
+    echo '* * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1' > /var/spool/cron/crontabs/www-data
+
 # php.ini
 RUN { \
 	echo 'expose_php = Off'; \
@@ -72,8 +76,7 @@ RUN set -ex; \
     chown -R ${DEFAULT_OWNER}:${DEFAULT_GROUP} /usr/src/espocrm /usr/src/espocrm-upgrades
 
 COPY ./docker-entrypoint.sh /usr/local/bin/
+COPY ./docker-cron.sh /usr/local/bin/
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 
-RUN (crontab -l -u ${DEFAULT_OWNER}; echo "* * * * * cd ${DOCUMENT_ROOT}; /usr/local/bin/php -f cron.php > /dev/null 2>&1") | crontab - -u ${DEFAULT_OWNER}
-
-CMD ["sh", "-c", "crond && php-fpm"]
+CMD ["php-fpm"]

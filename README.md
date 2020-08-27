@@ -35,6 +35,16 @@ services:
     volumes:
      - espocrm:/var/www/html
 
+  espocrm-cron:
+    container_name: espocrm-cron
+    build:
+      context: ./apache
+      dockerfile: Dockerfile
+    volumes:
+     - espocrm:/var/www/html
+    restart: always
+    entrypoint: docker-cron.sh
+
 volumes:
   mysql:
   espocrm:
