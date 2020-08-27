@@ -2,38 +2,29 @@ FROM php:7.3-fpm-alpine
 
 # Install php libs
 RUN set -ex; \
-    apk update; \
     apk add --no-cache --virtual .build-deps \
         libzip-dev \
         libpng-dev \
         libjpeg-turbo-dev \
         libwebp-dev \
-        php7-gd \
-        php7-exif \
         openldap-dev \
         imap-dev \
         git \
+        libzmq \
+        zeromq-dev \
         bash \
         $PHPIZE_DEPS \
     ; \
     \
 # Install php-zmq
     cd /usr; \
-    curl -fSL https://github.com/zeromq/libzmq/releases/download/v4.3.2/zeromq-4.3.2.tar.gz -o zeromq-4.3.2.tar.gz; \
-    tar -xvzf zeromq-4.3.2.tar.gz; \
-    rm zeromq-4.3.2.tar.gz; \
-    cd /usr/zeromq-4.3.2; \
-    ./configure; \
-    make; \
-    make install; \
-    cd /usr; \
     git clone https://github.com/zeromq/php-zmq.git; \
-    cd /usr/php-zmq; \
+    cd /usr/php-zmq && git checkout e0db82c3286da81fa8945894dd10125a528299e4; \
     phpize && ./configure; \
     make; \
     make install; \
+# END: Install php-zmq
     \
-# END Instalation php-zmq
     docker-php-ext-configure gd --with-jpeg-dir=/usr/include/ --with-webp-dir=/usr/include/; \
     docker-php-ext-install gd; \
     docker-php-ext-install exif; \

@@ -20,24 +20,14 @@ RUN set -ex; \
     ; \
     \
 # Install php-zmq
-    cd /home; \
-    curl -fSL https://github.com/zeromq/libzmq/releases/download/v4.3.2/zeromq-4.3.2.tar.gz -o zeromq-4.3.2.tar.gz; \
-    tar -xvzf zeromq-4.3.2.tar.gz; \
-    rm zeromq-4.3.2.tar.gz; \
-    cd /home/zeromq-4.3.2; \
-    ./configure; \
-    make; \
-    make install; \
-    ldconfig; \
-    ldconfig -p | grep zmq; \
-    cd /home; \
+    cd /usr; \
     git clone https://github.com/zeromq/php-zmq.git; \
-    cd /home/php-zmq; \
+    cd /usr/php-zmq && git checkout e0db82c3286da81fa8945894dd10125a528299e4; \
     phpize && ./configure; \
     make; \
     make install; \
+# END: Install php-zmq
     \
-# END Instalation php-zmq
     docker-php-ext-install pdo_mysql; \
     docker-php-ext-install zip; \
     docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
@@ -83,9 +73,6 @@ RUN { \
 	echo 'upload_max_filesize=30M'; \
 	echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
-
-# Set timezone
-RUN echo "UTC" > /etc/timezone && dpkg-reconfigure --frontend noninteractive tzdata
 
 RUN a2enmod rewrite;
 
