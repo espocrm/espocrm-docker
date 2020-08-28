@@ -112,9 +112,9 @@ runUpgradeStep() {
 installEspocrm() {
     echo >&2 "Start EspoCRM installation"
 
-    find . -type d -exec chmod 755 {} + && find . -type f -exec chmod 644 {} +;
-    find data custom/Espo/Custom client/custom -type d -exec chmod 775 {} + && find data custom/Espo/Custom client/custom -type f -exec chmod 664 {} +;
-    chmod 775 application/Espo/Modules client/modules;
+    find . -type d -exec chmod 755 {} + && find . -type f -exec chmod 644 {} +
+    find data custom/Espo/Custom client/custom -type d -exec chmod 775 {} + && find data custom/Espo/Custom client/custom -type f -exec chmod 664 {} +
+    chmod 775 application/Espo/Modules client/modules
 
     declare -a preferences=()
     for optionName in "${!OPTIONAL_PARAMS[@]}"
@@ -179,8 +179,25 @@ runInstallationStep() {
 
 # ------------------------- START -------------------------------------
 # Global variables
+DOCUMENT_ROOT="/var/www/html"
 SOURCE_FILES="/usr/src/espocrm"
 MAX_UPGRADE_COUNT=100
+DEFAULT_OWNER="www-data"
+DEFAULT_GROUP="www-data"
+
+if [ "$(id -u)" = '0' ]; then
+    if [[ "$1" == "apache2"* ]]; then
+        wrongSymbol='#'
+        DEFAULT_OWNER="${APACHE_RUN_USER:-www-data}"
+        DEFAULT_OWNER="${DEFAULT_OWNER#$wrongSymbol}"
+
+        DEFAULT_GROUP="${APACHE_RUN_GROUP:-www-data}"
+        DEFAULT_GROUP="${DEFAULT_GROUP#$wrongSymbol}"
+    fi
+else
+	DEFAULT_OWNER="$(id -u)"
+	DEFAULT_GROUP="$(id -g)"
+fi
 
 declare -A DEFAULTS=(
     ['ESPOCRM_DATABASE_HOST']='mysql'

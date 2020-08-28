@@ -77,10 +77,6 @@ RUN { \
 	echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 %%ADDITIONS%%
-ENV DOCUMENT_ROOT /var/www/html
-ENV DEFAULT_OWNER www-data
-ENV DEFAULT_GROUP www-data
-
 ENV ESPOCRM_VERSION %%ESPOCRM_VERSION%%
 ENV ESPOCRM_SHA256 %%ESPOCRM_SHA256%%
 
@@ -88,7 +84,7 @@ ENV ESPOCRM_UPGRADE_VERSION %%ESPOCRM_UPGRADE_VERSION%%
 ENV ESPOCRM_UPGRADE_URL %%ESPOCRM_UPGRADE_URL%%
 ENV ESPOCRM_UPGRADE_SHA256 %%ESPOCRM_UPGRADE_SHA256%%
 
-VOLUME ${DOCUMENT_ROOT}
+WORKDIR /var/www/html
 
 RUN set -ex; \
     curl -fSL "%%ESPOCRM_DOWNLOAD_URL%%" -o EspoCRM.zip; \
@@ -97,7 +93,7 @@ RUN set -ex; \
     mv "/usr/src/EspoCRM-%%ESPOCRM_VERSION%%" /usr/src/espocrm; \
 	rm EspoCRM.zip; \
     mkdir /usr/src/espocrm-upgrades; \
-    chown -R ${DEFAULT_OWNER}:${DEFAULT_GROUP} /usr/src/espocrm /usr/src/espocrm-upgrades
+    chown -R www-data:www-data /usr/src/espocrm /usr/src/espocrm-upgrades
 
 COPY ./docker-entrypoint.sh /usr/local/bin/
 COPY ./docker-cron.sh /usr/local/bin/

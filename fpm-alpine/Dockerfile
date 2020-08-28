@@ -53,10 +53,6 @@ RUN { \
 	echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
-ENV DOCUMENT_ROOT /var/www/html
-ENV DEFAULT_OWNER www-data
-ENV DEFAULT_GROUP www-data
-
 ENV ESPOCRM_VERSION 5.9.3
 ENV ESPOCRM_SHA256 b571d502de31a40d5e267c8658742f24ebc5c09245707306529b0d3f2e7c03bc
 
@@ -64,7 +60,7 @@ ENV ESPOCRM_UPGRADE_VERSION 5.8.5
 ENV ESPOCRM_UPGRADE_URL https://www.espocrm.com/downloads/upgrades/EspoCRM-upgrade-5.8.5-to-5.9.3.zip
 ENV ESPOCRM_UPGRADE_SHA256 a04d4fdadd877d684abd885dc7356ea2f0593e8a805851d79d4a6f68b6168700
 
-VOLUME ${DOCUMENT_ROOT}
+WORKDIR /var/www/html
 
 RUN set -ex; \
     curl -fSL "https://www.espocrm.com/downloads/EspoCRM-5.9.3.zip" -o EspoCRM.zip; \
@@ -73,7 +69,7 @@ RUN set -ex; \
     mv "/usr/src/EspoCRM-5.9.3" /usr/src/espocrm; \
 	rm EspoCRM.zip; \
     mkdir /usr/src/espocrm-upgrades; \
-    chown -R ${DEFAULT_OWNER}:${DEFAULT_GROUP} /usr/src/espocrm /usr/src/espocrm-upgrades
+    chown -R www-data:www-data /usr/src/espocrm /usr/src/espocrm-upgrades
 
 COPY ./docker-entrypoint.sh /usr/local/bin/
 COPY ./docker-cron.sh /usr/local/bin/
