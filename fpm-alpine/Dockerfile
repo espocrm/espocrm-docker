@@ -53,20 +53,20 @@ RUN { \
 	echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
-ENV ESPOCRM_VERSION 6.0.0
-ENV ESPOCRM_SHA256 bfc069e1291569185dfce20f3ff951465806420c48ad2e84e1320ab211801245
+ENV ESPOCRM_VERSION 6.0.1
+ENV ESPOCRM_SHA256 bbe49dd111008a15370c849a8254c94270d0f5c2c7c50a32ce0fdcc1a07c7ee9
 
 ENV ESPOCRM_UPGRADE_VERSION 5.9.4
-ENV ESPOCRM_UPGRADE_URL https://www.espocrm.com/downloads/upgrades/EspoCRM-upgrade-5.9.4-to-6.0.0.zip
-ENV ESPOCRM_UPGRADE_SHA256 5c3fc704abf3ac385bef2e6a12c968af036c81b0be2812eea4ebf3cca274ead9
+ENV ESPOCRM_UPGRADE_URL https://www.espocrm.com/downloads/upgrades/EspoCRM-upgrade-5.9.4-to-6.0.1.zip
+ENV ESPOCRM_UPGRADE_SHA256 49e2bb7c2e48e50a6edccbc7adf6aab02cf01c73913b45d1039cd429961c42b4
 
 WORKDIR /var/www/html
 
 RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-6.0.0.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-6.0.1.zip" -o EspoCRM.zip; \
 	echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-6.0.0" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-6.0.1" /usr/src/espocrm; \
 	rm EspoCRM.zip; \
     mkdir /usr/src/espocrm-upgrades; \
     chown -R www-data:www-data /usr/src/espocrm /usr/src/espocrm-upgrades
