@@ -82,10 +82,6 @@ RUN a2enmod rewrite;
 ENV ESPOCRM_VERSION 6.0.3
 ENV ESPOCRM_SHA256 b83bd02d6a994bc5b056653fc41de3f9637722dc9b9fa81b1d1399e2698cea66
 
-ENV ESPOCRM_UPGRADE_VERSION 5.9.4
-ENV ESPOCRM_UPGRADE_URL https://www.espocrm.com/downloads/upgrades/EspoCRM-upgrade-5.9.4-to-6.0.3.zip
-ENV ESPOCRM_UPGRADE_SHA256 45f27730e026197ddaa439b79eda43af83e251baaf7fc2ecad477e37a44ee3af
-
 WORKDIR /var/www/html
 
 RUN set -ex; \

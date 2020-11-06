@@ -75,32 +75,13 @@ actionUpgrade() {
         return
     fi
 
-    if [ $installedVersion == $ESPOCRM_UPGRADE_VERSION ]; then
-        local upgradePackage="/usr/src/espocrm-upgrades/upgrade-$ESPOCRM_UPGRADE_VERSION-$ESPOCRM_VERSION.zip"
-        curl -fSL "$ESPOCRM_UPGRADE_URL" -o "$upgradePackage"
-        if ! echo "$ESPOCRM_UPGRADE_SHA256 *$upgradePackage" | sha256sum -c -; then
-            echo >&2 "error: Checksum for upgrade package is failed."
-            exit 1
-        fi
-
-        echo >&2 "Start upgrading process from version $installedVersion."
-        runUpgradeStep "$upgradePackage"
-        actionUpgrade
-        return
-    fi
-
     echo >&2 "Start upgrading process from version $installedVersion."
     runUpgradeStep
     actionUpgrade
 }
 
 runUpgradeStep() {
-    if [ -n "${1-}" ]; then
-        local package="$1"
-        local result=$(php command.php upgrade -y --file="$package")
-    else
-        local result=$(php command.php upgrade -y)
-    fi
+    local result=$(php command.php upgrade -y --toVersion="$ESPOCRM_VERSION")
 
     if [[ "$result" == *"Error:"* ]]; then
         echo >&2 "error: Upgrade error, more details:"
