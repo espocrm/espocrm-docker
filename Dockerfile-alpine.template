@@ -9,7 +9,6 @@ RUN set -ex; \
         libwebp-dev \
         openldap-dev \
         imap-dev \
-        git \
         libzmq \
         zeromq-dev \
         bash \
@@ -18,11 +17,13 @@ RUN set -ex; \
     \
 # Install php-zmq
     cd /usr; \
-    git clone https://github.com/zeromq/php-zmq.git; \
-    cd /usr/php-zmq && git checkout e0db82c3286da81fa8945894dd10125a528299e4; \
+    curl -fSL https://github.com/zeromq/php-zmq/archive/e0db82c3286da81fa8945894dd10125a528299e4.tar.gz -o php-zmq.tar.gz; \
+    tar -zxf php-zmq.tar.gz; \
+    cd php-zmq*; \
     phpize && ./configure; \
     make; \
     make install; \
+    cd .. && rm -rf php-zmq*; \
 # END: Install php-zmq
     \
     docker-php-ext-configure gd --with-jpeg-dir=/usr/include/ --with-webp-dir=/usr/include/; \

@@ -16,16 +16,17 @@ RUN set -ex; \
         libldap2-dev \
         libzmq3-dev \
         zlib1g-dev \
-        git \
     ; \
     \
 # Install php-zmq
     cd /usr; \
-    git clone https://github.com/zeromq/php-zmq.git; \
-    cd /usr/php-zmq && git checkout e0db82c3286da81fa8945894dd10125a528299e4; \
+    curl -fSL https://github.com/zeromq/php-zmq/archive/e0db82c3286da81fa8945894dd10125a528299e4.tar.gz -o php-zmq.tar.gz; \
+    tar -zxf php-zmq.tar.gz; \
+    cd php-zmq*; \
     phpize && ./configure; \
     make; \
     make install; \
+    cd .. && rm -rf php-zmq*; \
 # END: Install php-zmq
     \
     docker-php-ext-install pdo_mysql; \
