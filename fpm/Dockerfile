@@ -29,13 +29,14 @@ RUN set -ex; \
     cd .. && rm -rf php-zmq*; \
 # END: Install php-zmq
     \
+    debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
     docker-php-ext-install pdo_mysql; \
     docker-php-ext-install zip; \
     docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
     docker-php-ext-install gd; \
     docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
     docker-php-ext-install imap; \
-    docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/; \
+    docker-php-ext-configure ldap --with-libdir="lib/$debMultiarch"; \
     docker-php-ext-install ldap; \
     docker-php-ext-install exif; \
     docker-php-ext-enable zmq; \
