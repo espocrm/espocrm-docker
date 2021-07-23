@@ -64,8 +64,13 @@ RUN set -ex; \
     ; \
     rm -rf /var/lib/apt/lists/*; \
     \
-    mkdir -p /var/spool/cron/crontabs; \
-    echo '* * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1' > /var/spool/cron/crontabs/www-data
+    mkdir -p /var/spool/cron/crontabs
+
+RUN { \
+	echo '* * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1'; \
+	echo '* * * * * sleep 20; * * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1'; \
+	echo '* * * * * sleep 40; * * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1'; \
+} > /var/spool/cron/crontabs/www-data
 
 # php.ini
 RUN { \
