@@ -1,4 +1,4 @@
-FROM php:7.3-%%VARIANT%%
+FROM php:7.4-%%VARIANT%%
 
 # Install php libs
 RUN set -ex; \
@@ -9,6 +9,8 @@ RUN set -ex; \
     apt-get install -y --no-install-recommends \
         libjpeg-dev \
         libpng-dev \
+        libwebp-dev \
+        libfreetype6-dev \
         libzip-dev \
         libxml2-dev \
         libc-client-dev \
@@ -32,7 +34,7 @@ RUN set -ex; \
     debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
     docker-php-ext-install pdo_mysql; \
     docker-php-ext-install zip; \
-    docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
+    docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp; \
     docker-php-ext-install gd; \
     docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
     docker-php-ext-install imap; \

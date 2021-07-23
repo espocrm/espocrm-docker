@@ -1,4 +1,4 @@
-FROM php:7.3-%%VARIANT%%
+FROM php:7.4-%%VARIANT%%
 
 # Install php libs
 RUN set -ex; \
@@ -26,7 +26,7 @@ RUN set -ex; \
     cd .. && rm -rf php-zmq*; \
 # END: Install php-zmq
     \
-    docker-php-ext-configure gd --with-jpeg-dir=/usr/include/ --with-webp-dir=/usr/include/; \
+    docker-php-ext-configure gd --with-jpeg --with-webp; \
     docker-php-ext-install gd; \
     docker-php-ext-install exif; \
     docker-php-ext-install ldap; \
