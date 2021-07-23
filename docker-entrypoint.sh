@@ -132,6 +132,8 @@ installEspocrm() {
     runInstallationStep "savePreferences" "$(join '&' "${preferences[@]}")"
     runInstallationStep "finish"
 
+    saveConfigParam "jobRunInParallel" "true"
+
     echo >&2 "End EspoCRM installation"
 }
 
@@ -156,6 +158,23 @@ runInstallationStep() {
         echo >&2 "$result"
         exit 1
     fi
+}
+
+# Bool: saveConfigParam "jobRunInParallel" "true"
+# String: saveConfigParam "language" "'en_US'"
+saveConfigParam() {
+    local name="$1"
+    local value="$2"
+
+    php -r "
+        require_once('$DOCUMENT_ROOT/bootstrap.php');
+
+        \$app = new \Espo\Core\Application();
+        \$config = \$app->getContainer()->get('config');
+
+        \$config->set('$name', $value);
+        \$config->save();
+    "
 }
 
 # ------------------------- START -------------------------------------
