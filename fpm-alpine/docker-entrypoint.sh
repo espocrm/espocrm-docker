@@ -132,6 +132,8 @@ installEspocrm() {
     runInstallationStep "savePreferences" "$(join '&' "${preferences[@]}")"
     runInstallationStep "finish"
 
+    saveConfigParam "jobRunInParallel" "true"
+
     echo >&2 "End EspoCRM installation"
 }
 
@@ -156,6 +158,41 @@ runInstallationStep() {
         echo >&2 "$result"
         exit 1
     fi
+}
+
+# Bool: saveConfigParam "jobRunInParallel" "true"
+# String: saveConfigParam "language" "'en_US'"
+saveConfigParam() {
+    local name="$1"
+    local value="$2"
+
+    php -r "
+        require_once('$DOCUMENT_ROOT/bootstrap.php');
+
+        \$app = new \Espo\Core\Application();
+        \$config = \$app->getContainer()->get('config');
+
+        if (\$config->get('$name') !== $value) {
+            \$config->set('$name', $value);
+            \$config->save();
+        }
+    "
+}
+
+applyEnvironments() {
+    declare -A configParams=(
+        ['webSocketZeroMQSubmissionDsn']='ESPOCRM_ENV_WEBSOCKET_SUBMISSION_DSN'
+        ['webSocketZeroMQSubscriberDsn']='ESPOCRM_ENV_WEBSOCKET_SUBSCRIBER_DSN'
+    )
+
+    for paramName in "${!configParams[@]}"
+    do
+        local envName="${configParams[$paramName]}"
+
+        if [ -n "${!envName-}" ]; then
+            saveConfigParam "$paramName" "'${!envName}'"
+        fi
+    done
 }
 
 # ------------------------- START -------------------------------------
@@ -239,6 +276,8 @@ case $installationType in
         exit 1
         ;;
 esac
+
+applyEnvironments
 # ------------------------- END -------------------------------------
 
 exec "$@"

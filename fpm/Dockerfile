@@ -1,4 +1,4 @@
-FROM php:7.3-fpm
+FROM php:7.4-fpm
 
 # Install php libs
 RUN set -ex; \
@@ -9,6 +9,8 @@ RUN set -ex; \
     apt-get install -y --no-install-recommends \
         libjpeg-dev \
         libpng-dev \
+        libwebp-dev \
+        libfreetype6-dev \
         libzip-dev \
         libxml2-dev \
         libc-client-dev \
@@ -32,13 +34,15 @@ RUN set -ex; \
     debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
     docker-php-ext-install pdo_mysql; \
     docker-php-ext-install zip; \
-    docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
+    docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp; \
     docker-php-ext-install gd; \
     docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
     docker-php-ext-install imap; \
     docker-php-ext-configure ldap --with-libdir="lib/$debMultiarch"; \
     docker-php-ext-install ldap; \
     docker-php-ext-install exif; \
+    docker-php-ext-install pcntl; \
+    docker-php-ext-install posix; \
     docker-php-ext-enable zmq; \
     \
 # reset a list of apt-mark
@@ -58,12 +62,8 @@ RUN set -ex; \
 RUN set -ex; \
     apt-get install -y --no-install-recommends \
         unzip \
-        busybox-static \
     ; \
-    rm -rf /var/lib/apt/lists/*; \
-    \
-    mkdir -p /var/spool/cron/crontabs; \
-    echo '* * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1' > /var/spool/cron/crontabs/www-data
+    rm -rf /var/lib/apt/lists/*
 
 # php.ini
 RUN { \
@@ -79,22 +79,22 @@ RUN { \
 	echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
-ENV ESPOCRM_VERSION 6.1.7
-ENV ESPOCRM_SHA256 329b24bf5d91bd843aee142de9e39f768c974ffd3228bcb905d17b91665a2ed3
+ENV ESPOCRM_VERSION 6.1.8
+ENV ESPOCRM_SHA256 97d7110f5ffddbf6c65b1e727d077a36844cf9e434c6123533762a8deb8d5cf2
 
 WORKDIR /var/www/html
 
 RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-6.1.7.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-6.1.8.zip" -o EspoCRM.zip; \
 	echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-6.1.7" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-6.1.8" /usr/src/espocrm; \
 	rm EspoCRM.zip; \
     mkdir /usr/src/espocrm-upgrades; \
     chown -R www-data:www-data /usr/src/espocrm /usr/src/espocrm-upgrades
 
-COPY ./docker-entrypoint.sh /usr/local/bin/
-COPY ./docker-cron.sh /usr/local/bin/
+COPY ./docker-*.sh  /usr/local/bin/
+
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 
 CMD ["php-fpm"]
