@@ -22,6 +22,50 @@ services:
       - mysql:/var/lib/mysql
 
   espocrm:
+    container_name: espocrm
+    image: espocrm/espocrm
+    environment:
+      ESPOCRM_DATABASE_PASSWORD: example
+      ESPOCRM_ADMIN_USERNAME: admin
+      ESPOCRM_ADMIN_PASSWORD: password
+      ESPOCRM_SITE_URL: "http://localhost:8080"
+    restart: always
+    ports:
+      - 8080:80
+    volumes:
+     - espocrm:/var/www/html
+
+  espocrm-daemon:
+    image: espocrm/espocrm
+    volumes:
+     - espocrm:/var/www/html
+    restart: always
+    entrypoint: docker-daemon.sh
+
+volumes:
+  mysql:
+  espocrm:
+```
+
+### Legacy Usage (EspoCRM v6.1.7 and earlier)
+
+```
+version: '3.1'
+
+services:
+
+  mysql:
+    container_name: mysql
+    image: mysql:8
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+    volumes:
+      - mysql:/var/lib/mysql
+
+  espocrm:
+    container_name: espocrm
     image: espocrm/espocrm
     environment:
       ESPOCRM_DATABASE_PASSWORD: example
@@ -48,7 +92,7 @@ volumes:
 
 ### Usage (only for development)
 
-Example `stack.yml`:
+Example `docker-compose.yml`:
 
 ```
 version: '3.1'
@@ -66,6 +110,7 @@ services:
       - mysql:/var/lib/mysql
 
   espocrm:
+    container_name: espocrm
     build:
       context: ./apache
       dockerfile: Dockerfile
@@ -80,22 +125,22 @@ services:
     volumes:
      - espocrm:/var/www/html
 
-  espocrm-cron:
-    container_name: espocrm-cron
+  espocrm-daemon:
+    container_name: espocrm-daemon
     build:
       context: ./apache
       dockerfile: Dockerfile
     volumes:
      - espocrm:/var/www/html
     restart: always
-    entrypoint: docker-cron.sh
+    entrypoint: docker-daemon.sh
 
 volumes:
   mysql:
   espocrm:
 ```
 
-Run `docker stack deploy -c stack.yml espocrm` (or `docker-compose -f stack.yml up`), wait for it to initialize completely, and visit `http://localhost:8080`.
+Run `docker-compose up -d`, wait for it to initialize completely, and visit `http://localhost:8080`.
 
 ### Documentation
 
