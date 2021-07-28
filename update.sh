@@ -54,9 +54,7 @@ do
 			-e 's#%%CMD%%#'"$cmd"'#' \
 		"./Dockerfile-$dist.template" > "$variant/Dockerfile"
 
-    cp docker-entrypoint.sh "$variant/docker-entrypoint.sh"
-    cp docker-cron.sh "$variant/docker-cron.sh"
-    cp docker-websocket.sh "$variant/docker-websocket.sh"
+    cp docker-*.sh "$variant"/
 
 	travisEnv+='\n  - VARIANT='"$variant"
 done

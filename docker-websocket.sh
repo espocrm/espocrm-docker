@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+
+set -eu
 
 DOCUMENT_ROOT="/var/www/html"
 

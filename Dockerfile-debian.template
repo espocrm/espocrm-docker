@@ -62,17 +62,8 @@ RUN set -ex; \
 RUN set -ex; \
     apt-get install -y --no-install-recommends \
         unzip \
-        busybox-static \
     ; \
-    rm -rf /var/lib/apt/lists/*; \
-    \
-    mkdir -p /var/spool/cron/crontabs
-
-RUN { \
-	echo '* * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1'; \
-	echo '* * * * * sleep 20; * * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1'; \
-	echo '* * * * * sleep 40; * * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1'; \
-} > /var/spool/cron/crontabs/www-data
+    rm -rf /var/lib/apt/lists/*
 
 # php.ini
 RUN { \
@@ -102,9 +93,7 @@ RUN set -ex; \
     mkdir /usr/src/espocrm-upgrades; \
     chown -R www-data:www-data /usr/src/espocrm /usr/src/espocrm-upgrades
 
-COPY ./docker-entrypoint.sh /usr/local/bin/
-COPY ./docker-cron.sh /usr/local/bin/
-COPY ./docker-websocket.sh /usr/local/bin/
+COPY ./docker-*.sh  /usr/local/bin/
 
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 

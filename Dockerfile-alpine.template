@@ -11,6 +11,7 @@ RUN set -ex; \
         imap-dev \
         libzmq \
         zeromq-dev \
+        bash \
         $PHPIZE_DEPS \
     ; \
     \
@@ -36,15 +37,6 @@ RUN set -ex; \
     docker-php-ext-install pcntl; \
     docker-php-ext-install posix; \
     docker-php-ext-enable zmq
-
-RUN set -ex; \
-    rm /var/spool/cron/crontabs/root
-
-RUN { \
-	echo '* * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1'; \
-	echo '* * * * * sleep 20; * * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1'; \
-	echo '* * * * * sleep 40; * * * * * cd /var/www/html; /usr/local/bin/php -f cron.php > /dev/null 2>&1'; \
-} > /var/spool/cron/crontabs/www-data
 
 # php.ini
 RUN { \
@@ -74,9 +66,7 @@ RUN set -ex; \
     mkdir /usr/src/espocrm-upgrades; \
     chown -R www-data:www-data /usr/src/espocrm /usr/src/espocrm-upgrades
 
-COPY ./docker-entrypoint.sh /usr/local/bin/
-COPY ./docker-cron.sh /usr/local/bin/
-COPY ./docker-websocket.sh /usr/local/bin/
+COPY ./docker-*.sh  /usr/local/bin/
 
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 
