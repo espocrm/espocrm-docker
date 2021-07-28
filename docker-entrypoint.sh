@@ -172,9 +172,27 @@ saveConfigParam() {
         \$app = new \Espo\Core\Application();
         \$config = \$app->getContainer()->get('config');
 
-        \$config->set('$name', $value);
-        \$config->save();
+        if (\$config->get('$name') !== $value) {
+            \$config->set('$name', $value);
+            \$config->save();
+        }
     "
+}
+
+applyEnvironments() {
+    declare -A configParams=(
+        ['webSocketZeroMQSubmissionDsn']='ESPOCRM_ENV_WEBSOCKET_SUBMISSION_DSN'
+        ['webSocketZeroMQSubscriberDsn']='ESPOCRM_ENV_WEBSOCKET_SUBSCRIBER_DSN'
+    )
+
+    for paramName in "${!configParams[@]}"
+    do
+        local envName="${configParams[$paramName]}"
+
+        if [ -n "${!envName-}" ]; then
+            saveConfigParam "$paramName" "'${!envName}'"
+        fi
+    done
 }
 
 # ------------------------- START -------------------------------------
@@ -258,6 +276,8 @@ case $installationType in
         exit 1
         ;;
 esac
+
+applyEnvironments
 # ------------------------- END -------------------------------------
 
 exec "$@"

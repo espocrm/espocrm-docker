@@ -56,6 +56,7 @@ do
 
     cp docker-entrypoint.sh "$variant/docker-entrypoint.sh"
     cp docker-cron.sh "$variant/docker-cron.sh"
+    cp docker-websocket.sh "$variant/docker-websocket.sh"
 
 	travisEnv+='\n  - VARIANT='"$variant"
 done

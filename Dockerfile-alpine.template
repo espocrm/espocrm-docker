@@ -76,6 +76,8 @@ RUN set -ex; \
 
 COPY ./docker-entrypoint.sh /usr/local/bin/
 COPY ./docker-cron.sh /usr/local/bin/
+COPY ./docker-websocket.sh /usr/local/bin/
+
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 
 CMD ["%%CMD%%"]
