@@ -52,9 +52,9 @@ declare -a variantList=(
 )
 
 declare -A architectures=(
-	[apache]="amd64, arm32v7, arm64v8, i386, ppc64le"
-	[fpm]="amd64, arm32v7, arm64v8, i386, ppc64le"
-	[fpm-alpine]="amd64, arm32v6, arm32v7, arm64v8, i386, ppc64le"
+	[apache]="amd64, i386, arm32v7, s390x"
+	[fpm]="amd64, i386, arm32v7, s390x"
+	[fpm-alpine]="amd64, i386, arm32v6, arm32v7, arm64v8, ppc64le, s390x"
 )
 
 for variant in "${variantList[@]}"
