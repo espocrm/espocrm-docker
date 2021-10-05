@@ -183,6 +183,8 @@ applyEnvironments() {
     declare -A configParams=(
         ['webSocketZeroMQSubmissionDsn']='ESPOCRM_ENV_WEBSOCKET_SUBMISSION_DSN'
         ['webSocketZeroMQSubscriberDsn']='ESPOCRM_ENV_WEBSOCKET_SUBSCRIBER_DSN'
+        ['webSocketUrl']='ESPOCRM_ENV_WEB_SOCKET_URL'
+        ['siteUrl']='ESPOCRM_ENV_SITE_URL'
     )
 
     for paramName in "${!configParams[@]}"
