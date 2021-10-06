@@ -45,6 +45,9 @@ do
 
     mkdir -p "$variant"
 
+    cp docker-*.sh "$variant"/
+    sed -i '/# entrypoint-utils.sh/r entrypoint-utils.sh' $variant/docker-*.sh
+
     sed -r \
 			-e 's#%%VARIANT%%#'"$variant"'#' \
 			-e 's#%%ESPOCRM_VERSION%%#'"$version"'#' \
@@ -53,8 +56,6 @@ do
 			-e 's#%%ADDITIONS%%#'"$addition"'#' \
 			-e 's#%%CMD%%#'"$cmd"'#' \
 		"./Dockerfile-$dist.template" > "$variant/Dockerfile"
-
-    cp docker-*.sh "$variant"/
 
 	travisEnv+='\n  - VARIANT='"$variant"
 done

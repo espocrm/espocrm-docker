@@ -2,12 +2,15 @@
 
 set -euo pipefail
 
+# entrypoint-utils.sh
+# END: entrypoint-utils.sh
+
 installationType() {
     if [ -f "$DOCUMENT_ROOT/data/config.php" ]; then
-        local isInstalled=$(php -r "\$config=include('$DOCUMENT_ROOT/data/config.php'); echo \$config['isInstalled'];")
+        local isInstalled=$(getConfigParamFromFile "isInstalled")
 
         if [ -n "$isInstalled" ] && [ "$isInstalled" = 1 ]; then
-            local installedVersion=$(php -r "\$config=include('$DOCUMENT_ROOT/data/config.php'); echo \$config['version'];")
+            local installedVersion=$(getConfigParamFromFile "version")
             local isVersionGreater=$(compareVersion "$ESPOCRM_VERSION" "$installedVersion" ">")
 
             if [ -n "$isVersionGreater" ]; then
@@ -24,20 +27,6 @@ installationType() {
     fi
 
     echo "install"
-}
-
-compareVersion() {
-    local version1="$1"
-    local version2="$2"
-    local operator="$3"
-
-    echo $(php -r "echo version_compare('$version1', '$version2', '$operator');")
-}
-
-join() {
-    local sep="$1"; shift
-    local out; printf -v out "${sep//%/%%}%s" "$@"
-    echo "${out#$sep}"
 }
 
 actionInstall() {
@@ -67,7 +56,7 @@ actionUpgrade() {
         return
     fi
 
-    local installedVersion=$(php -r "\$config=include('$DOCUMENT_ROOT/data/config.php'); echo \$config['version'];")
+    local installedVersion=$(getConfigParamFromFile "version")
     local isVersionEqual=$(compareVersion "$installedVersion" "$ESPOCRM_VERSION" ">=")
 
     if [ -n "$isVersionEqual" ]; then
@@ -76,7 +65,11 @@ actionUpgrade() {
     fi
 
     echo >&2 "Start upgrading process from version $installedVersion."
-    runUpgradeStep
+
+    runUpgradeStep || {
+        return
+    }
+
     actionUpgrade
 }
 
@@ -158,43 +151,6 @@ runInstallationStep() {
         echo >&2 "$result"
         exit 1
     fi
-}
-
-# Bool: saveConfigParam "jobRunInParallel" "true"
-# String: saveConfigParam "language" "'en_US'"
-saveConfigParam() {
-    local name="$1"
-    local value="$2"
-
-    php -r "
-        require_once('$DOCUMENT_ROOT/bootstrap.php');
-
-        \$app = new \Espo\Core\Application();
-        \$config = \$app->getContainer()->get('config');
-
-        if (\$config->get('$name') !== $value) {
-            \$config->set('$name', $value);
-            \$config->save();
-        }
-    "
-}
-
-applyEnvironments() {
-    declare -A configParams=(
-        ['webSocketZeroMQSubmissionDsn']='ESPOCRM_ENV_WEBSOCKET_SUBMISSION_DSN'
-        ['webSocketZeroMQSubscriberDsn']='ESPOCRM_ENV_WEBSOCKET_SUBSCRIBER_DSN'
-        ['webSocketUrl']='ESPOCRM_ENV_WEB_SOCKET_URL'
-        ['siteUrl']='ESPOCRM_ENV_SITE_URL'
-    )
-
-    for paramName in "${!configParams[@]}"
-    do
-        local envName="${configParams[$paramName]}"
-
-        if [ -n "${!envName-}" ]; then
-            saveConfigParam "$paramName" "'${!envName}'"
-        fi
-    done
 }
 
 # ------------------------- START -------------------------------------
@@ -279,7 +235,7 @@ case $installationType in
         ;;
 esac
 
-applyEnvironments
+applyConfigEnvironments
 # ------------------------- END -------------------------------------
 
 exec "$@"
