@@ -1,0 +1,69 @@
+name: Build and push to Docker Hub
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  dockerhub:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Get Version
+        id: get_version
+        uses: battila7/get-version-action@v2
+      -
+        name: apache
+        uses: docker/build-push-action@v2
+        with:
+          context: ./apache
+          platforms: linux/386,linux/amd64,linux/arm/v7,linux/s390x
+          push: true
+          tags: |
+            espocrm/espocrm:latest
+            espocrm/espocrm:${{ steps.get_version.outputs.version }}
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}
+            espocrm/espocrm:apache
+            espocrm/espocrm:${{ steps.get_version.outputs.version }}-apache
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-apache
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}-apache
+      -
+        name: fpm
+        uses: docker/build-push-action@v2
+        with:
+          context: ./fpm
+          platforms: linux/386,linux/amd64,linux/arm/v7,linux/s390x
+          push: true
+          tags: |
+            espocrm/espocrm:fpm
+            espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-fpm
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}-fpm
+      -
+        name: fpm-alpine
+        uses: docker/build-push-action@v2
+        with:
+          context: ./fpm-alpine
+          platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/ppc64le,linux/s390x
+          push: true
+          tags: |
+            espocrm/espocrm:fpm-alpine
+            espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm-alpine
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-fpm-alpine
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}-fpm-alpine
