@@ -33,6 +33,7 @@ jobs:
         with:
           context: ./apache
           platforms: linux/386,linux/amd64,linux/arm/v7,linux/s390x
+          push: true
           tags: |
             espocrm/espocrm:latest
             espocrm/espocrm:${{ steps.get_version.outputs.version }}
@@ -48,6 +49,7 @@ jobs:
         with:
           context: ./fpm
           platforms: linux/386,linux/amd64,linux/arm/v7,linux/s390x
+          push: true
           tags: |
             espocrm/espocrm:fpm
             espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm
@@ -59,6 +61,7 @@ jobs:
         with:
           context: ./fpm-alpine
           platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8,linux/ppc64le,linux/s390x
+          push: true
           tags: |
             espocrm/espocrm:fpm-alpine
             espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm-alpine
