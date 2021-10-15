@@ -15,6 +15,7 @@ RUN set -ex; \
         libxml2-dev \
         libc-client-dev \
         libkrb5-dev \
+        libldap-common \
         libldap2-dev \
         libzmq3-dev \
         zlib1g-dev \
@@ -79,19 +80,18 @@ RUN { \
 	echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
-ENV ESPOCRM_VERSION 7.0.4
-ENV ESPOCRM_SHA256 32944e7bb6fb1637ccbcb16deb29cf9db6725af7e02a816b11b50e237a39b2ec
+ENV ESPOCRM_VERSION 7.0.5
+ENV ESPOCRM_SHA256 82a47e18fbc07686184ce98b85f8def923de209502b6576e597c7ed03f505e47
 
 WORKDIR /var/www/html
 
 RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-7.0.4.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-7.0.5.zip" -o EspoCRM.zip; \
 	echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-7.0.4" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-7.0.5" /usr/src/espocrm; \
 	rm EspoCRM.zip; \
-    mkdir /usr/src/espocrm-upgrades; \
-    chown -R www-data:www-data /usr/src/espocrm /usr/src/espocrm-upgrades
+    chown -R www-data:www-data /usr/src/espocrm
 
 COPY ./docker-*.sh  /usr/local/bin/
 
