@@ -91,8 +91,7 @@ RUN set -ex; \
     unzip -q EspoCRM.zip -d /usr/src; \
     mv "/usr/src/EspoCRM-%%ESPOCRM_VERSION%%" /usr/src/espocrm; \
 	rm EspoCRM.zip; \
-    mkdir /usr/src/espocrm-upgrades; \
-    chown -R www-data:www-data /usr/src/espocrm /usr/src/espocrm-upgrades
+    chown -R www-data:www-data /usr/src/espocrm
 
 COPY ./docker-*.sh  /usr/local/bin/
 
