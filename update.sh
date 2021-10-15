@@ -4,7 +4,11 @@ set -euo pipefail
 
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
-latestRelease=$(curl -s "https://s.espocrm.com/release/latest")
+if [ -n "${1-}" ]; then
+    latestRelease=$(curl -s "https://s.espocrm.com/release/info/?version=$1")
+else
+    latestRelease=$(curl -s "https://s.espocrm.com/release/latest")
+fi
 
 version=$(echo $latestRelease | jq -r '.version')
 downnloadUrl=$(echo $latestRelease | jq -r '.package')
