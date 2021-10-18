@@ -15,7 +15,6 @@ RUN set -ex; \
         libxml2-dev \
         libc-client-dev \
         libkrb5-dev \
-        libldap-common \
         libldap2-dev \
         libzmq3-dev \
         zlib1g-dev \
@@ -63,6 +62,7 @@ RUN set -ex; \
 RUN set -ex; \
     apt-get install -y --no-install-recommends \
         unzip \
+        libldap-common \
     ; \
     rm -rf /var/lib/apt/lists/*
 
