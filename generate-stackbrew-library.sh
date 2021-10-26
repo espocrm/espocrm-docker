@@ -37,9 +37,9 @@ join() {
 generateCommit="$(fileCommit "$@")"
 
 cat <<-EOH
-# this file is generated via https://github.com/espocrm/docker/blob/$generateCommit/$self
+# this file is generated via https://github.com/espocrm/espocrm-docker/blob/$generateCommit/$self
 Maintainers: Taras Machyshyn <docker@espocrm.com> (@tmachyshyn)
-GitRepo: https://github.com/espocrm/docker.git
+GitRepo: https://github.com/espocrm/espocrm-docker.git
 GitCommit: $generateCommit
 EOH
 
