@@ -64,8 +64,11 @@ saveConfigParam() {
         \$config = \$app->getContainer()->get('config');
 
         if (\$config->get('$name') !== $value) {
-            \$config->set('$name', $value);
-            \$config->save();
+            \$injectableFactory = \$app->getContainer()->get('injectableFactory');
+            \$configWriter = \$injectableFactory->create('\\Espo\\Core\\Utils\\Config\\ConfigWriter');
+
+            \$configWriter->set('$name', $value);
+            \$configWriter->save();
         }
     "
 }
