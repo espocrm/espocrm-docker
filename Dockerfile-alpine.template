@@ -1,4 +1,4 @@
-FROM php:7.4-%%VARIANT%%
+FROM php:8.0-%%VARIANT%%
 
 # Install php libs
 RUN set -ex; \
@@ -17,7 +17,7 @@ RUN set -ex; \
     \
 # Install php-zmq
     cd /usr; \
-    curl -fSL https://github.com/zeromq/php-zmq/archive/e0db82c3286da81fa8945894dd10125a528299e4.tar.gz -o php-zmq.tar.gz; \
+    curl -fSL https://github.com/zeromq/php-zmq/archive/ee5fbc693f07b2d6f0d9fd748f131be82310f386.tar.gz -o php-zmq.tar.gz; \
     tar -zxf php-zmq.tar.gz; \
     cd php-zmq*; \
     phpize && ./configure; \
@@ -36,7 +36,8 @@ RUN set -ex; \
     docker-php-ext-install pdo_mysql; \
     docker-php-ext-install pcntl; \
     docker-php-ext-install posix; \
-    docker-php-ext-enable zmq
+    docker-php-ext-enable zmq; \
+    docker-php-ext-install bcmath
 
 # php.ini
 RUN { \

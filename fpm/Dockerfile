@@ -1,4 +1,4 @@
-FROM php:7.4-fpm
+FROM php:8.0-fpm
 
 # Install php libs
 RUN set -ex; \
@@ -9,8 +9,6 @@ RUN set -ex; \
     apt-get install -y --no-install-recommends \
         libjpeg-dev \
         libpng-dev \
-        libwebp-dev \
-        libfreetype6-dev \
         libzip-dev \
         libxml2-dev \
         libc-client-dev \
@@ -22,7 +20,7 @@ RUN set -ex; \
     \
 # Install php-zmq
     cd /usr; \
-    curl -fSL https://github.com/zeromq/php-zmq/archive/e0db82c3286da81fa8945894dd10125a528299e4.tar.gz -o php-zmq.tar.gz; \
+    curl -fSL https://github.com/zeromq/php-zmq/archive/ee5fbc693f07b2d6f0d9fd748f131be82310f386.tar.gz -o php-zmq.tar.gz; \
     tar -zxf php-zmq.tar.gz; \
     cd php-zmq*; \
     phpize && ./configure; \
@@ -34,9 +32,9 @@ RUN set -ex; \
     debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
     docker-php-ext-install pdo_mysql; \
     docker-php-ext-install zip; \
-    docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp; \
+    docker-php-ext-configure gd --with-jpeg; \
     docker-php-ext-install gd; \
-    docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
+    PHP_OPENSSL=yes docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
     docker-php-ext-install imap; \
     docker-php-ext-configure ldap --with-libdir="lib/$debMultiarch"; \
     docker-php-ext-install ldap; \
@@ -44,6 +42,7 @@ RUN set -ex; \
     docker-php-ext-install pcntl; \
     docker-php-ext-install posix; \
     docker-php-ext-enable zmq; \
+    docker-php-ext-install bcmath; \
     \
 # reset a list of apt-mark
     apt-mark auto '.*' > /dev/null; \
