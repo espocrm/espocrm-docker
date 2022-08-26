@@ -75,6 +75,22 @@ saveConfigParam() {
     "
 }
 
+checkInstanceReady() {
+    local isInstalled=$(getConfigParamFromFile "isInstalled")
+
+    if [ -z "$isInstalled" ] || [ "$isInstalled" != 1 ]; then
+        echo "Instance is not ready: waiting for the installation"
+        exit 0
+    fi
+
+    local maintenanceMode=$(getConfigParam "maintenanceMode")
+
+    if [ -n "$maintenanceMode" ] && [ "$maintenanceMode" = 1 ]; then
+        echo "Instance is not ready: waiting for the upgrade"
+        exit 0
+    fi
+}
+
 applyConfigEnvironments() {
     local envName
     local envValue
@@ -163,6 +179,8 @@ normalizeConfigParamValue() {
     echo "$value"
 }
 # END: entrypoint-utils.sh
+
+checkInstanceReady
 
 applyConfigEnvironments
 
