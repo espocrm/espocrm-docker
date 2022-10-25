@@ -77,16 +77,57 @@ checkInstanceReady() {
     local isInstalled=$(getConfigParamFromFile "isInstalled")
 
     if [ -z "$isInstalled" ] || [ "$isInstalled" != 1 ]; then
-        echo "Instance is not ready: waiting for the installation"
+        echo >&2 "Instance is not ready: waiting for the installation"
         exit 0
     fi
 
-    local maintenanceMode=$(getConfigParam "maintenanceMode")
+    local maintenanceMode=$(getConfigParamFromFile "maintenanceMode")
 
     if [ -n "$maintenanceMode" ] && [ "$maintenanceMode" = 1 ]; then
-        echo "Instance is not ready: waiting for the upgrade"
+        echo >&2 "Instance is not ready: waiting for the upgrade"
         exit 0
     fi
+
+    if ! verifyDatabaseReady ; then
+        exit 0
+    fi
+}
+
+isDatabaseReady() {
+    php -r "
+        require_once('$DOCUMENT_ROOT/bootstrap.php');
+
+        \$app = new \Espo\Core\Application();
+        \$config = \$app->getContainer()->get('config');
+
+        \$helper = new \Espo\Core\Utils\Database\Helper(\$config);
+
+        try {
+            \$helper->createPdoConnection();
+        }
+        catch (Exception \$e) {
+            die(false);
+        }
+
+        die(true);
+    "
+}
+
+verifyDatabaseReady() {
+    for i in {1..10}
+    do
+        isReady=$(isDatabaseReady 2>&1)
+
+        if [ -n "$isReady" ]; then
+            return 0 #true
+        fi
+
+        echo >&2 "Waiting MySQL for receiving connections..."
+        sleep 3
+    done
+
+    echo >&2 "error: MySQL is not available"
+    return 1 #false
 }
 
 applyConfigEnvironments() {
@@ -394,9 +435,14 @@ case $installationType in
 
     upgrade)
         echo >&2 "Run \"upgrade\" action."
-        UPGRADE_NUMBER=0
-        actionUpgrade
-        chown -R $DEFAULT_OWNER:$DEFAULT_GROUP "$DOCUMENT_ROOT"
+
+        if verifyDatabaseReady ; then
+            UPGRADE_NUMBER=0
+            actionUpgrade
+            chown -R $DEFAULT_OWNER:$DEFAULT_GROUP "$DOCUMENT_ROOT"
+        else
+            echo "error: Unable to upgrade the instance. Starting the current version."
+        fi
         ;;
 
     skip)
