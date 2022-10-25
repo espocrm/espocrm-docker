@@ -221,9 +221,14 @@ case $installationType in
 
     upgrade)
         echo >&2 "Run \"upgrade\" action."
-        UPGRADE_NUMBER=0
-        actionUpgrade
-        chown -R $DEFAULT_OWNER:$DEFAULT_GROUP "$DOCUMENT_ROOT"
+
+        if verifyDatabaseReady ; then
+            UPGRADE_NUMBER=0
+            actionUpgrade
+            chown -R $DEFAULT_OWNER:$DEFAULT_GROUP "$DOCUMENT_ROOT"
+        else
+            echo "error: Unable to upgrade the instance. Starting the current version."
+        fi
         ;;
 
     skip)
