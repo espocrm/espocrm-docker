@@ -318,7 +318,7 @@ installEspocrm() {
 
     runInstallationStep "step1" "user-lang=${ESPOCRM_LANGUAGE}"
 
-    for i in {1..10}
+    for i in {1..20}
     do
         settingsTestResult=$(runInstallationStep "settingsTest" "hostName=${ESPOCRM_DATABASE_HOST}&dbName=${ESPOCRM_DATABASE_NAME}&dbUserName=${ESPOCRM_DATABASE_USER}&dbUserPass=${ESPOCRM_DATABASE_PASSWORD}" true 2>&1)
 
@@ -330,7 +330,7 @@ installEspocrm() {
     done
 
     if [[ "$settingsTestResult" == *"Error:"* ]] && [[ "$settingsTestResult" == *"[errorCode] => 2002"* ]]; then
-        echo >&2 "warning: Cannot connecting to MySQL server. Continuing anyway"
+        echo >&2 "warning: Cannot connect to MySQL server. Continuing anyway"
         return
     fi
 
