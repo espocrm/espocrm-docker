@@ -26,9 +26,12 @@ getConfigParamFromFile() {
             }
         }
 
-        \$config=include('$DOCUMENT_ROOT/data/config.php');
-        if (array_key_exists('$name', \$config)) {
-            die(\$config['$name']);
+        if (file_exists('$DOCUMENT_ROOT/data/config.php')) {
+            \$config=include('$DOCUMENT_ROOT/data/config.php');
+
+            if (array_key_exists('$name', \$config)) {
+                die(\$config['$name']);
+            }
         }
     "
 }
