@@ -117,7 +117,7 @@ isDatabaseReady() {
 }
 
 verifyDatabaseReady() {
-    for i in {1..10}
+    for i in {1..40}
     do
         isReady=$(isDatabaseReady 2>&1)
 
