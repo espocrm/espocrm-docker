@@ -1,4 +1,4 @@
-FROM php:8.0-apache
+FROM php:8.1-apache
 
 # Install php libs
 RUN set -ex; \
@@ -14,7 +14,7 @@ RUN set -ex; \
         libc-client-dev \
         libkrb5-dev \
         libldap2-dev \
-        libzmq3-dev \
+        libzmq5-dev \
         zlib1g-dev \
     ; \
     \
