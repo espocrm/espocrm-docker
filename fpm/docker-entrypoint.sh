@@ -291,7 +291,7 @@ actionUpgrade() {
 }
 
 runUpgradeStep() {
-    local result=$(php command.php upgrade -y -s --toVersion="$ESPOCRM_VERSION")
+    local result=$(php command.php upgrade -y --toVersion="$ESPOCRM_VERSION")
 
     if [[ "$result" == *"Error:"* ]]; then
         echo >&2 "error: Upgrade error, more details:"
