@@ -452,7 +452,7 @@ case $installationType in
         ;;
 
     *)
-        echo >&2 "error: Uknown installation type [$installationType]"
+        echo >&2 "error: Unknown installation type [$installationType]"
         exit 1
         ;;
 esac
