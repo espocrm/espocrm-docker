@@ -2,6 +2,14 @@
 
 This repository is the official Docker image for EspoCRM.
 
+Article map:
+
+- [Usage](#usage)
+- [Legacy Usage (EspoCRM v6.1.7 and earlier)](#legacy-usage-espocrm-v617-and-earlier)
+- [Usage (only for development)](#usage-only-for-development)
+- [Upgrading](#upgrading)
+- [Documentation](#documentation)
+
 ### Usage
 
 Use a prebuilt version for a production instance, https://hub.docker.com/r/espocrm/espocrm.
@@ -162,6 +170,17 @@ volumes:
 ```
 
 Run `docker-compose up -d`, wait for it to initialize completely, and visit `http://localhost:8080`.
+
+### Upgrading
+
+In order to upgrade EspoCRM instance created by the `docker-compose.yml`:
+
+1. Open your `docker-compose.yml` directory.
+2. Run the command:
+
+```
+$ docker compose pull && docker compose up -d
+```
 
 ### Documentation
 
