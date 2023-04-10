@@ -66,9 +66,9 @@ actionUpgrade() {
 
     echo >&2 "Start upgrading process from version $installedVersion."
 
-    runUpgradeStep || {
+    if ! runUpgradeStep ; then
         return
-    }
+    fi
 
     actionUpgrade
 }
@@ -79,8 +79,11 @@ runUpgradeStep() {
     if [[ "$result" == *"Error:"* ]]; then
         echo >&2 "error: Upgrade error, more details:"
         echo >&2 "$result"
-        exit 1
+
+        return 1 #false
     fi
+
+    return 0 #true
 }
 
 installEspocrm() {
@@ -157,7 +160,7 @@ runInstallationStep() {
 # Global variables
 DOCUMENT_ROOT="/var/www/html"
 SOURCE_FILES="/usr/src/espocrm"
-MAX_UPGRADE_COUNT=100
+MAX_UPGRADE_COUNT=20
 DEFAULT_OWNER="www-data"
 DEFAULT_GROUP="www-data"
 
