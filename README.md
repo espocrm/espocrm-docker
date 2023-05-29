@@ -45,6 +45,8 @@ services:
     volumes:
       - espocrm:/var/www/html
     restart: always
+    depends_on:
+      - mysql
     ports:
       - 8080:80
 
@@ -54,6 +56,8 @@ services:
     volumes:
       - espocrm:/var/www/html
     restart: always
+    depends_on:
+      - espocrm
     entrypoint: docker-daemon.sh
 
   espocrm-websocket:
@@ -67,6 +71,8 @@ services:
     volumes:
       - espocrm:/var/www/html
     restart: always
+    depends_on:
+      - espocrm
     entrypoint: docker-websocket.sh
     ports:
       - 8081:8080
@@ -75,6 +81,8 @@ volumes:
   mysql:
   espocrm:
 ```
+
+Run `docker compose up -d`, wait for it to initialize completely, and visit `http://localhost:8080`.
 
 ### Legacy Usage (EspoCRM v6.1.7 and earlier)
 
@@ -168,8 +176,6 @@ volumes:
   mysql:
   espocrm:
 ```
-
-Run `docker-compose up -d`, wait for it to initialize completely, and visit `http://localhost:8080`.
 
 ### Upgrading
 
