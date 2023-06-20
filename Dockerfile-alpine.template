@@ -27,17 +27,19 @@ RUN set -ex; \
 # END: Install php-zmq
     \
     docker-php-ext-configure gd --with-jpeg --with-webp; \
-    docker-php-ext-install gd; \
-    docker-php-ext-install exif; \
-    docker-php-ext-install ldap; \
-    docker-php-ext-install imap; \
-    docker-php-ext-install pcntl; \
-    docker-php-ext-install zip; \
-    docker-php-ext-install pdo_mysql; \
-    docker-php-ext-install pcntl; \
-    docker-php-ext-install posix; \
-    docker-php-ext-enable zmq; \
-    docker-php-ext-install bcmath
+    \
+    docker-php-ext-install \
+        pdo_mysql \
+        zip \
+        gd \
+        imap \
+        ldap \
+        exif \
+        pcntl \
+        posix \
+        bcmath \
+    ; \
+    docker-php-ext-enable zmq
 
 # php.ini
 RUN { \
