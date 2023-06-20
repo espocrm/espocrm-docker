@@ -27,17 +27,19 @@ RUN set -ex; \
 # END: Install php-zmq
     \
     docker-php-ext-configure gd --with-jpeg --with-webp; \
-    docker-php-ext-install gd; \
-    docker-php-ext-install exif; \
-    docker-php-ext-install ldap; \
-    docker-php-ext-install imap; \
-    docker-php-ext-install pcntl; \
-    docker-php-ext-install zip; \
-    docker-php-ext-install pdo_mysql; \
-    docker-php-ext-install pcntl; \
-    docker-php-ext-install posix; \
-    docker-php-ext-enable zmq; \
-    docker-php-ext-install bcmath
+    \
+    docker-php-ext-install \
+        pdo_mysql \
+        zip \
+        gd \
+        imap \
+        ldap \
+        exif \
+        pcntl \
+        posix \
+        bcmath \
+    ; \
+    docker-php-ext-enable zmq
 
 # php.ini
 RUN { \
@@ -53,16 +55,16 @@ RUN { \
 	echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
-ENV ESPOCRM_VERSION 7.4.6
-ENV ESPOCRM_SHA256 0d56c073b642b4cea8dc7f5a13b7dce773983d32a53abc9a31abe7ac17db2289
+ENV ESPOCRM_VERSION 7.5.0
+ENV ESPOCRM_SHA256 857edd1d5b5cba2dce8bd3c5c9e7acf3028d525cfef5d14eca126c13af656fde
 
 WORKDIR /var/www/html
 
 RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-7.4.6.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-7.5.0.zip" -o EspoCRM.zip; \
 	echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-7.4.6" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-7.5.0" /usr/src/espocrm; \
 	rm EspoCRM.zip; \
     chown -R www-data:www-data /usr/src/espocrm
 
