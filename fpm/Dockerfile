@@ -91,16 +91,16 @@ RUN { \
 	echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
-ENV ESPOCRM_VERSION 7.5.1
-ENV ESPOCRM_SHA256 874b9673f110d6e4ca8460bb1e9752a4411bb9e5756e14700587a879f79941fa
+ENV ESPOCRM_VERSION 7.5.2
+ENV ESPOCRM_SHA256 2f33e7e93ff0c204b96d3a01629e972836d9f03680eada960b28ad8170a226bd
 
 WORKDIR /var/www/html
 
 RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-7.5.1.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-7.5.2.zip" -o EspoCRM.zip; \
 	echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-7.5.1" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-7.5.2" /usr/src/espocrm; \
 	rm EspoCRM.zip; \
     chown -R www-data:www-data /usr/src/espocrm
 
