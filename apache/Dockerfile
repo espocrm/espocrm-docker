@@ -7,6 +7,7 @@ RUN set -ex; \
     \
     apt-get update; \
     apt-get install -y --no-install-recommends \
+        libpq-dev \
         libjpeg-dev \
         libpng-dev \
         libmagickwand-dev \
@@ -39,6 +40,7 @@ RUN set -ex; \
     PHP_OPENSSL=yes docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
     \
     docker-php-ext-install \
+        pdo_pgsql \
         pdo_mysql \
         zip \
         gd \
