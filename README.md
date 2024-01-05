@@ -193,4 +193,4 @@ Documentation for administrators, users and developers is available [here](https
 
 ### License
 
-EspoCRM is published under the GNU GPLv3 [license](https://raw.githubusercontent.com/espocrm/espocrm-docker/master/LICENSE).
+EspoCRM is published under the GNU AGPLv3 [license](https://raw.githubusercontent.com/espocrm/espocrm/master/LICENSE.txt).
