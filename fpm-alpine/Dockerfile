@@ -1,4 +1,4 @@
-FROM php:8.1-fpm-alpine
+FROM php:8.3-fpm-alpine
 
 # Install php libs
 RUN set -ex; \
