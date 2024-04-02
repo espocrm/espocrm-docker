@@ -35,6 +35,7 @@ services:
     image: espocrm/espocrm
     container_name: espocrm
     environment:
+      ESPOCRM_DATABASE_PLATFORM: Mysql
       ESPOCRM_DATABASE_HOST: espocrm-db
       ESPOCRM_DATABASE_USER: espocrm
       ESPOCRM_DATABASE_PASSWORD: database_password
