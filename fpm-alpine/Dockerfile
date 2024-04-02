@@ -7,6 +7,7 @@ RUN set -ex; \
         libpng-dev \
         libjpeg-turbo-dev \
         libwebp-dev \
+	freetype-dev \
         openldap-dev \
         imap-dev \
         libzmq \
@@ -26,7 +27,7 @@ RUN set -ex; \
     cd .. && rm -rf php-zmq*; \
 # END: Install php-zmq
     \
-    docker-php-ext-configure gd --with-jpeg --with-webp; \
+    docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype; \
     \
     docker-php-ext-install \
         pdo_mysql \
