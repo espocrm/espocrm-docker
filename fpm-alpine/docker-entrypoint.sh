@@ -323,7 +323,7 @@ installEspocrm() {
 
     for i in {1..20}
     do
-        settingsTestResult=$(runInstallationStep "settingsTest" "hostName=${ESPOCRM_DATABASE_HOST}&dbName=${ESPOCRM_DATABASE_NAME}&dbUserName=${ESPOCRM_DATABASE_USER}&dbUserPass=${ESPOCRM_DATABASE_PASSWORD}" true 2>&1)
+        settingsTestResult=$(runInstallationStep "settingsTest" "dbPlatform=${ESPOCRM_DATABASE_PLATFORM}&hostName=${ESPOCRM_DATABASE_HOST}&dbName=${ESPOCRM_DATABASE_NAME}&dbUserName=${ESPOCRM_DATABASE_USER}&dbUserPass=${ESPOCRM_DATABASE_PASSWORD}" true 2>&1)
 
         if [[ ! "$settingsTestResult" == *"Error:"* ]]; then
             break
@@ -333,11 +333,11 @@ installEspocrm() {
     done
 
     if [[ "$settingsTestResult" == *"Error:"* ]] && [[ "$settingsTestResult" == *"[errorCode] => 2002"* ]]; then
-        echo >&2 "warning: Cannot connect to MySQL server. Continuing anyway"
+        echo >&2 "warning: Unable connect to Database server. Continuing anyway"
         return
     fi
 
-    runInstallationStep "setupConfirmation" "host-name=${ESPOCRM_DATABASE_HOST}&db-name=${ESPOCRM_DATABASE_NAME}&db-user-name=${ESPOCRM_DATABASE_USER}&db-user-password=${ESPOCRM_DATABASE_PASSWORD}"
+    runInstallationStep "setupConfirmation" "db-platform=${ESPOCRM_DATABASE_PLATFORM}&host-name=${ESPOCRM_DATABASE_HOST}&db-name=${ESPOCRM_DATABASE_NAME}&db-user-name=${ESPOCRM_DATABASE_USER}&db-user-password=${ESPOCRM_DATABASE_PASSWORD}"
     runInstallationStep "checkPermission"
     runInstallationStep "saveSettings" "site-url=${ESPOCRM_SITE_URL}&default-permissions-user=${DEFAULT_OWNER}&default-permissions-group=${DEFAULT_GROUP}"
     runInstallationStep "buildDatabase"
@@ -396,6 +396,7 @@ else
 fi
 
 declare -A DEFAULTS=(
+    ['ESPOCRM_DATABASE_PLATFORM']='Mysql'
     ['ESPOCRM_DATABASE_HOST']='mysql'
     ['ESPOCRM_DATABASE_NAME']='espocrm'
     ['ESPOCRM_DATABASE_USER']='root'

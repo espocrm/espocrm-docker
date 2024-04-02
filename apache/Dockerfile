@@ -1,5 +1,8 @@
 FROM php:8.2-apache
 
+LABEL org.opencontainers.image.source=https://github.com/espocrm/espocrm
+LABEL org.opencontainers.image.description="EspoCRM is an Open Source CRM. Try for Free."
+
 # Install php libs
 RUN set -ex; \
     \
