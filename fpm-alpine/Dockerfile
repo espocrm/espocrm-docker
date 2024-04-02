@@ -3,6 +3,7 @@ FROM php:8.2-fpm-alpine
 # Install php libs
 RUN set -ex; \
     apk add --no-cache --virtual .build-deps \
+        postgresql-dev \
         libzip-dev \
         libpng-dev \
         libjpeg-turbo-dev \
@@ -30,6 +31,7 @@ RUN set -ex; \
     docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype; \
     \
     docker-php-ext-install \
+        pdo_pgsql \
         pdo_mysql \
         zip \
         gd \
