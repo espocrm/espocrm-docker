@@ -172,7 +172,7 @@ isQuoteValue() {
                 return true;
             }
 
-	    if (filter_var(\$value, FILTER_VALIDATE_IP)) {
+            if (filter_var(\$value, FILTER_VALIDATE_IP)) {
                 return true;
             }
 

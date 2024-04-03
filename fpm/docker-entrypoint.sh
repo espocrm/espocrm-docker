@@ -172,6 +172,10 @@ isQuoteValue() {
                 return true;
             }
 
+            if (filter_var(\$value, FILTER_VALIDATE_IP)) {
+                return true;
+            }
+
             if (!preg_match('/[^0-9.]+/', \$value)) {
                 return false;
             }
