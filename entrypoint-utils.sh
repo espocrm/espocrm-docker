@@ -120,11 +120,11 @@ verifyDatabaseReady() {
             return 0 #true
         fi
 
-        echo >&2 "Waiting MySQL for receiving connections..."
+        echo >&2 "Waiting Database for receiving connections..."
         sleep 3
     done
 
-    echo >&2 "error: MySQL is not available"
+    echo >&2 "error: Database is not available"
     return 1 #false
 }
 
