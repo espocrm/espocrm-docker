@@ -38,6 +38,7 @@ generateCommit="$(fileCommit "$@")"
 
 cat <<-EOH
 # this file is generated via https://github.com/espocrm/espocrm-docker/blob/$generateCommit/$self
+
 Maintainers: Taras Machyshyn <docker@espocrm.com> (@tmachyshyn)
 GitRepo: https://github.com/espocrm/espocrm-docker.git
 EOH
