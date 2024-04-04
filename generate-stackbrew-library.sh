@@ -40,7 +40,6 @@ cat <<-EOH
 # this file is generated via https://github.com/espocrm/espocrm-docker/blob/$generateCommit/$self
 Maintainers: Taras Machyshyn <docker@espocrm.com> (@tmachyshyn)
 GitRepo: https://github.com/espocrm/espocrm-docker.git
-GitCommit: $generateCommit
 EOH
 
 defaultVariant="apache"
@@ -52,8 +51,8 @@ declare -a variantList=(
 )
 
 declare -A architectures=(
-	[apache]="amd64, i386, arm32v7, arm64, s390x"
-	[fpm]="amd64, i386, arm32v7, arm64, s390x"
+	[apache]="amd64, i386, arm32v7, arm64v8, s390x"
+	[fpm]="amd64, i386, arm32v7, arm64v8, s390x"
 	[fpm-alpine]="amd64, i386, arm32v6, arm32v7, arm64v8, ppc64le, s390x"
 )
 
@@ -84,6 +83,7 @@ do
 	cat <<-EOE
 		Tags: $(join ', ' "${tags[@]}")
 		Architectures: ${architectures[$variant]}
+		GitCommit: $generateCommit
 		Directory: $dir
 	EOE
 
