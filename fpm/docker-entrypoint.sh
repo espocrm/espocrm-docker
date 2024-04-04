@@ -195,7 +195,7 @@ applyConfigEnvironments() {
     done
 }
 
-isQuoteValue() {
+isValueQuoted() {
     local value="$1"
 
     php -r "
@@ -256,9 +256,9 @@ normalizeConfigParamName() {
 normalizeConfigParamValue() {
     local value=${1//\'/\\\'}
 
-    local isQuoteValue=$(isQuoteValue "$value")
+    local isValueQuoted=$(isValueQuoted "$value")
 
-    if [ -n "$isQuoteValue" ] && [ "$isQuoteValue" = 1 ]; then
+    if [ -n "$isValueQuoted" ] && [ "$isValueQuoted" = 1 ]; then
         echo "'$value'"
         return
     fi
