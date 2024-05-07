@@ -3,12 +3,12 @@ FROM php:8.2-fpm
 LABEL org.opencontainers.image.source=https://github.com/espocrm/espocrm
 LABEL org.opencontainers.image.description="EspoCRM is an Open Source CRM. Try for Free."
 
-# Install php libs
 RUN set -ex; \
     \
     aptMarkList="$(apt-mark showmanual)"; \
     \
     apt-get update; \
+    # Install php libs
     apt-get install -y --no-install-recommends \
         libpq-dev \
         libjpeg-dev \
@@ -72,10 +72,8 @@ RUN set -ex; \
         | sort -u \
         | xargs -rt apt-mark manual; \
     \
-    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
-
-# Install required libs
-RUN set -ex; \
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+    # Install required libs
     apt-get install -y --no-install-recommends \
         unzip \
         libldap-common \
