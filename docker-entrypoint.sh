@@ -104,9 +104,15 @@ installEspocrm() {
 
     runInstallationStep "step1" "user-lang=${ESPOCRM_LANGUAGE}"
 
+    local databaseHost="${ESPOCRM_DATABASE_HOST}"
+
+    if [ -n "$ESPOCRM_DATABASE_PORT" ]; then
+        databaseHost="${ESPOCRM_DATABASE_HOST}:${ESPOCRM_DATABASE_PORT}"
+    fi
+
     for i in {1..20}
     do
-        settingsTestResult=$(runInstallationStep "settingsTest" "dbPlatform=${ESPOCRM_DATABASE_PLATFORM}&hostName=${ESPOCRM_DATABASE_HOST}&dbName=${ESPOCRM_DATABASE_NAME}&dbUserName=${ESPOCRM_DATABASE_USER}&dbUserPass=${ESPOCRM_DATABASE_PASSWORD}" true 2>&1)
+        settingsTestResult=$(runInstallationStep "settingsTest" "dbPlatform=${ESPOCRM_DATABASE_PLATFORM}&hostName=${databaseHost}&dbName=${ESPOCRM_DATABASE_NAME}&dbUserName=${ESPOCRM_DATABASE_USER}&dbUserPass=${ESPOCRM_DATABASE_PASSWORD}" true 2>&1)
 
         if [[ ! "$settingsTestResult" == *"Error:"* ]]; then
             break
@@ -120,7 +126,7 @@ installEspocrm() {
         return
     fi
 
-    runInstallationStep "setupConfirmation" "db-platform=${ESPOCRM_DATABASE_PLATFORM}&host-name=${ESPOCRM_DATABASE_HOST}&db-name=${ESPOCRM_DATABASE_NAME}&db-user-name=${ESPOCRM_DATABASE_USER}&db-user-password=${ESPOCRM_DATABASE_PASSWORD}"
+    runInstallationStep "setupConfirmation" "db-platform=${ESPOCRM_DATABASE_PLATFORM}&host-name=${databaseHost}&db-name=${ESPOCRM_DATABASE_NAME}&db-user-name=${ESPOCRM_DATABASE_USER}&db-user-password=${ESPOCRM_DATABASE_PASSWORD}"
     runInstallationStep "checkPermission"
     runInstallationStep "saveSettings" "site-url=${ESPOCRM_SITE_URL}&default-permissions-user=${DEFAULT_OWNER}&default-permissions-group=${DEFAULT_GROUP}"
     runInstallationStep "buildDatabase"
@@ -181,6 +187,7 @@ fi
 declare -A DEFAULTS=(
     ['ESPOCRM_DATABASE_PLATFORM']='Mysql'
     ['ESPOCRM_DATABASE_HOST']='mysql'
+    ['ESPOCRM_DATABASE_PORT']=''
     ['ESPOCRM_DATABASE_NAME']='espocrm'
     ['ESPOCRM_DATABASE_USER']='root'
     ['ESPOCRM_DATABASE_PASSWORD']='password'
