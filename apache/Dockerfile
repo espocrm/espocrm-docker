@@ -96,16 +96,16 @@ RUN { \
 
 RUN a2enmod rewrite;
 
-ENV ESPOCRM_VERSION 8.2.5
-ENV ESPOCRM_SHA256 c48b57369d08805eb8b7b2180b5afd567fcf39b622a9239ceda70193fe29186c
+ENV ESPOCRM_VERSION 8.3.0
+ENV ESPOCRM_SHA256 941c542742356cd6db4023f8e3fe85fcc8ba2c51e0e60bf0a85fb5ca14376816
 
 WORKDIR /var/www/html
 
 RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-8.2.5.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-8.3.0.zip" -o EspoCRM.zip; \
 	echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-8.2.5" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-8.3.0" /usr/src/espocrm; \
 	rm EspoCRM.zip; \
     chown -R www-data:www-data /usr/src/espocrm
 
