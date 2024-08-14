@@ -36,7 +36,6 @@ RUN set -ex; \
     cd .. && rm -rf php-zmq*; \
 # END: Install php-zmq
     \
-    pecl install imagick-3.6.0; \
     debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
     docker-php-ext-configure ldap --with-libdir="lib/$debMultiarch"; \
     docker-php-ext-configure gd --with-jpeg --with-freetype --with-webp; \
@@ -56,10 +55,7 @@ RUN set -ex; \
     ; \
     docker-php-ext-enable \
         zmq \
-        imagick \
     ; \
-    \
-    rm -r /tmp/pear; \
     \
 # reset a list of apt-mark
     apt-mark auto '.*' > /dev/null; \
