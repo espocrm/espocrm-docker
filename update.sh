@@ -11,7 +11,7 @@ else
 fi
 
 version=$(echo $latestRelease | jq -r '.version')
-downnloadUrl=$(echo $latestRelease | jq -r '.package')
+downloadUrl=$(echo $latestRelease | jq -r '.package')
 sha256=$(echo $latestRelease | jq -r '.packageSha256')
 
 declare variantList=(
@@ -55,7 +55,7 @@ do
     sed -r \
 			-e 's#%%VARIANT%%#'"$variant"'#' \
 			-e 's#%%ESPOCRM_VERSION%%#'"$version"'#' \
-			-e 's#%%ESPOCRM_DOWNLOAD_URL%%#'"$downnloadUrl"'#' \
+			-e 's#%%ESPOCRM_DOWNLOAD_URL%%#'"$downloadUrl"'#' \
 	        -e 's#%%ESPOCRM_SHA256%%#'"$sha256"'#' \
 			-e 's#%%ADDITIONS%%#'"$addition"'#' \
 			-e 's#%%CMD%%#'"$cmd"'#' \
