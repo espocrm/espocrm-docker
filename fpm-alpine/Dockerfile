@@ -71,8 +71,7 @@ RUN set -ex; \
 	echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
     mv "/usr/src/EspoCRM-9.0.0" /usr/src/espocrm; \
-	rm EspoCRM.zip; \
-    chown -R www-data:www-data /usr/src/espocrm
+	rm EspoCRM.zip
 
 COPY ./docker-*.sh  /usr/local/bin/
 

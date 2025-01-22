@@ -2,8 +2,6 @@
 
 set -eu
 
-DOCUMENT_ROOT="/var/www/html"
-
 # entrypoint-utils.sh
 # END: entrypoint-utils.sh
 

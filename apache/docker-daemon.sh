@@ -2,8 +2,6 @@
 
 set -eu
 
-DOCUMENT_ROOT="/var/www/html"
-
 # entrypoint-utils.sh
 configPrefix="ESPOCRM_CONFIG_"
 
@@ -30,16 +28,16 @@ getConfigParamFromFile() {
     local name="$1"
 
     php -r "
-        if (file_exists('$DOCUMENT_ROOT/data/config-internal.php')) {
-            \$config=include('$DOCUMENT_ROOT/data/config-internal.php');
+        if (file_exists('/var/www/html/data/config-internal.php')) {
+            \$config=include('/var/www/html/data/config-internal.php');
 
             if (array_key_exists('$name', \$config)) {
                 die(\$config['$name']);
             }
         }
 
-        if (file_exists('$DOCUMENT_ROOT/data/config.php')) {
-            \$config=include('$DOCUMENT_ROOT/data/config.php');
+        if (file_exists('/var/www/html/data/config.php')) {
+            \$config=include('/var/www/html/data/config.php');
 
             if (array_key_exists('$name', \$config)) {
                 die(\$config['$name']);
@@ -52,7 +50,7 @@ getConfigParam() {
     local name="$1"
 
     php -r "
-        require_once('$DOCUMENT_ROOT/bootstrap.php');
+        require_once('/var/www/html/bootstrap.php');
 
         \$app = new \Espo\Core\Application();
         \$config = \$app->getContainer()->get('config');
@@ -68,7 +66,7 @@ saveConfigParam() {
     local value="$2"
 
     php -r "
-        require_once('$DOCUMENT_ROOT/bootstrap.php');
+        require_once('/var/www/html/bootstrap.php');
 
         \$app = new \Espo\Core\Application();
         \$config = \$app->getContainer()->get('config');
@@ -91,7 +89,7 @@ saveConfigArrayParam() {
     local value="$3"
 
     php -r "
-        require_once('$DOCUMENT_ROOT/bootstrap.php');
+        require_once('/var/www/html/bootstrap.php');
 
         \$app = new \Espo\Core\Application();
         \$config = \$app->getContainer()->get('config');
@@ -138,7 +136,7 @@ checkInstanceReady() {
 
 isDatabaseReady() {
     php -r "
-        require_once('$DOCUMENT_ROOT/bootstrap.php');
+        require_once('/var/www/html/bootstrap.php');
 
         \$app = new \Espo\Core\Application();
         \$config = \$app->getContainer()->get('config');

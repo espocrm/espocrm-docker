@@ -6,7 +6,7 @@ set -euo pipefail
 # END: entrypoint-utils.sh
 
 installationType() {
-    if [ -f "$DOCUMENT_ROOT/data/config.php" ]; then
+    if [ -f "/var/www/html/data/config.php" ]; then
         local isInstalled=$(getConfigParamFromFile "isInstalled")
 
         if [ -n "$isInstalled" ] && [ "$isInstalled" = 1 ]; then
@@ -35,14 +35,14 @@ actionInstall() {
         exit 1
     fi
 
-    cp -a "$SOURCE_FILES/." "$DOCUMENT_ROOT/"
+    cp -a "$SOURCE_FILES/." "/var/www/html/"
 
     installEspocrm
 }
 
 actionReinstall() {
-    if [ -f "$DOCUMENT_ROOT/install/config.php" ]; then
-        sed -i "s/'isInstalled' => true/'isInstalled' => false/g" "$DOCUMENT_ROOT/install/config.php"
+    if [ -f "/var/www/html/install/config.php" ]; then
+        sed -i "s/'isInstalled' => true/'isInstalled' => false/g" "/var/www/html/install/config.php"
     fi
 
     installEspocrm
@@ -52,7 +52,7 @@ actionUpgrade() {
     UPGRADE_NUMBER=$((UPGRADE_NUMBER+1))
 
     if [ $UPGRADE_NUMBER -gt $MAX_UPGRADE_COUNT ];then
-        echo >&2 "The MAX_UPGRADE_COUNT exceded. The upgrading process has been stopped."
+        echo >&2 "The MAX_UPGRADE_COUNT exceed. The upgrading process has been stopped."
         return
     fi
 
@@ -61,6 +61,8 @@ actionUpgrade() {
 
     if [ -n "$isVersionEqual" ]; then
         echo >&2 "Upgrade process is finished. EspoCRM version is $installedVersion."
+
+        setPermissions
         return
     fi
 
@@ -89,11 +91,8 @@ runUpgradeStep() {
 installEspocrm() {
     echo >&2 "Start EspoCRM installation"
 
-    find . -type d -exec chmod 755 {} + && find . -type f -exec chmod 644 {} +
-    find data custom/Espo/Custom client/custom -type d -exec chmod 775 {} + && find data custom/Espo/Custom client/custom -type f -exec chmod 664 {} +
-    chmod 775 application/Espo/Modules client/modules
-
     declare -a preferences=()
+
     for optionName in "${!OPTIONAL_PARAMS[@]}"
     do
         local varName="${OPTIONAL_PARAMS[$optionName]}"
@@ -128,13 +127,15 @@ installEspocrm() {
 
     runInstallationStep "setupConfirmation" "db-platform=${ESPOCRM_DATABASE_PLATFORM}&host-name=${databaseHost}&db-name=${ESPOCRM_DATABASE_NAME}&db-user-name=${ESPOCRM_DATABASE_USER}&db-user-password=${ESPOCRM_DATABASE_PASSWORD}"
     runInstallationStep "checkPermission"
-    runInstallationStep "saveSettings" "site-url=${ESPOCRM_SITE_URL}&default-permissions-user=${DEFAULT_OWNER}&default-permissions-group=${DEFAULT_GROUP}"
+    runInstallationStep "saveSettings" "site-url=${ESPOCRM_SITE_URL}&default-permissions-user=www-data&default-permissions-group=www-data"
     runInstallationStep "buildDatabase"
     runInstallationStep "createUser" "user-name=${ESPOCRM_ADMIN_USERNAME}&user-pass=${ESPOCRM_ADMIN_PASSWORD}"
     runInstallationStep "savePreferences" "$(join '&' "${preferences[@]}")"
     runInstallationStep "finish"
 
     saveConfigParam "jobRunInParallel" "true"
+
+    setPermissions
 
     echo >&2 "End EspoCRM installation"
 }
@@ -162,27 +163,20 @@ runInstallationStep() {
     fi
 }
 
+setPermissions() {
+    find . -type d -exec chmod 755 {} +
+    find . -type f -exec chmod 644 {} +
+
+    chown -R root:root /var/www/html
+
+    chown www-data:www-data /var/www/html
+    chown -R www-data:www-data /var/www/html/{data,custom,client/custom}
+}
+
 # ------------------------- START -------------------------------------
 # Global variables
-DOCUMENT_ROOT="/var/www/html"
 SOURCE_FILES="/usr/src/espocrm"
 MAX_UPGRADE_COUNT=20
-DEFAULT_OWNER="www-data"
-DEFAULT_GROUP="www-data"
-
-if [ "$(id -u)" = '0' ]; then
-    if [[ "$1" == "apache2"* ]]; then
-        wrongSymbol='#'
-        DEFAULT_OWNER="${APACHE_RUN_USER:-www-data}"
-        DEFAULT_OWNER="${DEFAULT_OWNER#$wrongSymbol}"
-
-        DEFAULT_GROUP="${APACHE_RUN_GROUP:-www-data}"
-        DEFAULT_GROUP="${DEFAULT_GROUP#$wrongSymbol}"
-    fi
-else
-	DEFAULT_OWNER="$(id -u)"
-	DEFAULT_GROUP="$(id -g)"
-fi
 
 declare -A DEFAULTS=(
     ['ESPOCRM_DATABASE_PLATFORM']='Mysql'
@@ -221,13 +215,11 @@ case $installationType in
     install)
         echo >&2 "Run \"install\" action."
         actionInstall
-        chown -R $DEFAULT_OWNER:$DEFAULT_GROUP "$DOCUMENT_ROOT"
         ;;
 
     reinstall)
         echo >&2 "Run \"reinstall\" action."
         actionReinstall
-        chown -R $DEFAULT_OWNER:$DEFAULT_GROUP "$DOCUMENT_ROOT"
         ;;
 
     upgrade)
@@ -236,7 +228,6 @@ case $installationType in
         if verifyDatabaseReady ; then
             UPGRADE_NUMBER=0
             actionUpgrade
-            chown -R $DEFAULT_OWNER:$DEFAULT_GROUP "$DOCUMENT_ROOT"
         else
             echo "error: Unable to upgrade the instance. Starting the current version."
         fi
