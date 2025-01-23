@@ -5,6 +5,74 @@ set -euo pipefail
 # entrypoint-utils.sh
 # END: entrypoint-utils.sh
 
+isCustomPath() {
+    local path="$1"
+
+    for customDir in "${CUSTOM_RESOURCE_LIST[@]}"; do
+        if [[ "$path" == "$customDir"* ]]; then
+            return 0 # true
+        fi
+    done
+
+    return 1 # false
+}
+
+runFileIntegrity() {
+    if [ ! -d "$SOURCE_FILES" ]; then
+        echo >&2 "error: Source files [$SOURCE_FILES] are not found."
+        exit 1
+    fi
+
+    local documentRoot="/var/www/html"
+
+    cp -a "$SOURCE_FILES/." "$documentRoot/"
+
+    local backupDir="$documentRoot/data/.backup/integrity/$(date +'%Y%m%d-%H%M%S')"
+
+    diff --exclude="data" -rq "$documentRoot" "$SOURCE_FILES" | grep "Only in $documentRoot" | while read -r line; do
+        local path=${line/"Only in $documentRoot: "/}
+
+        path=${path/"Only in $documentRoot/"/}
+        path=${path/": "/\/}
+
+        local fullPath="$documentRoot/$path"
+
+        if isCustomPath "$fullPath"; then
+            continue
+        fi
+
+        echo >&2 "info: [Integrity] Extra item found: $fullPath"
+
+        local backupPath="$backupDir/$path"
+
+        if [ -f "$fullPath" ]; then
+            echo >&2 "info: [Integrity] Backup file to: $backupPath"
+
+            mkdir -p $(dirname "$backupPath")
+            cp "$fullPath" "$backupPath"
+
+            echo >&2 "info: [Integrity] Delete file: $fullPath"
+            rm -f "$fullPath"
+
+            continue
+        fi
+
+        if [ -d "$fullPath" ]; then
+            echo >&2 "info: [Integrity] Backup directory to: $backupPath"
+
+            mkdir -p "$backupPath"
+            cp -a "$fullPath"/. "$backupPath"/
+
+            echo >&2 "info: [Integrity] Delete directory: $fullPath"
+            rm -rf "$fullPath"
+
+            continue
+        fi
+    done
+
+    find "$documentRoot" -type d -empty -print -exec rmdir {} \;
+}
+
 installationType() {
     if [ -f "/var/www/html/data/config.php" ]; then
         local isInstalled=$(getConfigParamFromFile "isInstalled")
@@ -30,13 +98,6 @@ installationType() {
 }
 
 actionInstall() {
-    if [ ! -d "$SOURCE_FILES" ]; then
-        echo >&2 "error: Source files [$SOURCE_FILES] are not found."
-        exit 1
-    fi
-
-    cp -a "$SOURCE_FILES/." "/var/www/html/"
-
     installEspocrm
 }
 
@@ -167,19 +228,33 @@ runInstallationStep() {
 }
 
 setPermissions() {
-    find . -type d -exec chmod 755 {} +
-    find . -type f -exec chmod 644 {} +
+    find /var/www/html -type d -exec chmod 755 {} +
+    find /var/www/html -type f -exec chmod 644 {} +
 
     chown -R root:root /var/www/html
 
     chown www-data:www-data /var/www/html
-    chown -R www-data:www-data /var/www/html/{data,custom,client/custom}
+    chown -R www-data:www-data "${CUSTOM_RESOURCE_LIST[@]}"
+}
+
+setEnvironments() {
+    for defaultParam in "${!DEFAULTS[@]}"
+    do
+        setEnvValue "${defaultParam}" "${DEFAULTS[$defaultParam]}"
+    done
 }
 
 # ------------------------- START -------------------------------------
 # Global variables
 SOURCE_FILES="/usr/src/espocrm"
 MAX_UPGRADE_COUNT=20
+
+CUSTOM_RESOURCE_LIST=(
+    "/var/www/html/data"
+    "/var/www/html/custom"
+    "/var/www/html/client/custom"
+    "/var/www/html/install/config.php"
+)
 
 declare -A DEFAULTS=(
     ['ESPOCRM_DATABASE_PLATFORM']='Mysql'
@@ -205,10 +280,9 @@ declare -A OPTIONAL_PARAMS=(
     ['decimalMark']='ESPOCRM_DECIMAL_MARK'
 )
 
-for defaultParam in "${!DEFAULTS[@]}"
-do
-    setEnvValue "${defaultParam}" "${DEFAULTS[$defaultParam]}"
-done
+setEnvironments
+
+runFileIntegrity
 
 installationType=$(installationType)
 
