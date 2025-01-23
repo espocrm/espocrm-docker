@@ -5,19 +5,25 @@ set -euo pipefail
 # entrypoint-utils.sh
 # END: entrypoint-utils.sh
 
-isCustomPath() {
-    local path="$1"
+start() {
+    if [ -f "/var/www/html/data/config-internal.php" ]; then
+        local isInstalled=$(getConfigParamFromFile "isInstalled")
 
-    for customDir in "${CUSTOM_RESOURCE_LIST[@]}"; do
-        if [[ "$path" == "$customDir"* ]]; then
-            return 0 # true
+        if [ -n "$isInstalled" ] && [ "$isInstalled" = 1 ]; then
+            actionUpgrade
+            return
         fi
-    done
 
-    return 1 # false
+        actionReinstall
+        return
+    fi
+
+    actionInstall
 }
 
 runFileIntegrity() {
+    echo >&2 "info: [Integrity] Start"
+
     if [ ! -d "$SOURCE_FILES" ]; then
         echo >&2 "error: Source files [$SOURCE_FILES] are not found."
         exit 1
@@ -29,7 +35,8 @@ runFileIntegrity() {
 
     local backupDir="$documentRoot/data/.backup/integrity/$(date +'%Y%m%d-%H%M%S')"
 
-    diff --exclude="data" -rq "$documentRoot" "$SOURCE_FILES" | grep "Only in $documentRoot" | while read -r line; do
+    # find extra files
+    diff -rq "$documentRoot" "$SOURCE_FILES" | grep "Only in $documentRoot" | while read -r line; do
         local path=${line/"Only in $documentRoot: "/}
 
         path=${path/"Only in $documentRoot/"/}
@@ -68,40 +75,29 @@ runFileIntegrity() {
 
             continue
         fi
-    done
+    done || true
 
-    find "$documentRoot" -type d -empty -print -exec rmdir {} \;
-}
-
-installationType() {
-    if [ -f "/var/www/html/data/config.php" ]; then
-        local isInstalled=$(getConfigParamFromFile "isInstalled")
-
-        if [ -n "$isInstalled" ] && [ "$isInstalled" = 1 ]; then
-            local installedVersion=$(getConfigParamFromFile "version")
-            local isVersionGreater=$(compareVersion "$ESPOCRM_VERSION" "$installedVersion" ">")
-
-            if [ -n "$isVersionGreater" ]; then
-                echo "upgrade"
-                return
-            fi
-
-            echo "skip"
-            return
+    # remove empty directories
+    find "$documentRoot" -type d -empty | while read -r emptyDir; do
+        if isCustomPath "$emptyDir"; then
+            continue
         fi
 
-        echo "reinstall"
-        return
-    fi
+        rmdir "$emptyDir"
+    done
 
-    echo "install"
+    echo >&2 "info: [Integrity] End"
 }
 
 actionInstall() {
+    echo >&2 "info: Run \"install\" action."
+
     installEspocrm
 }
 
 actionReinstall() {
+    echo >&2 "info: Run \"reinstall\" action."
+
     if [ -f "/var/www/html/install/config.php" ]; then
         sed -i "s/'isInstalled' => true/'isInstalled' => false/g" "/var/www/html/install/config.php"
     fi
@@ -110,47 +106,18 @@ actionReinstall() {
 }
 
 actionUpgrade() {
-    UPGRADE_NUMBER=$((UPGRADE_NUMBER+1))
+    echo >&2 "info: Run \"upgrade\" action."
 
-    if [ $UPGRADE_NUMBER -gt $MAX_UPGRADE_COUNT ];then
-        echo >&2 "The MAX_UPGRADE_COUNT exceed. The upgrading process has been stopped."
+    if verifyDatabaseReady ; then
+        php /var/www/html/command.php migrate
         return
     fi
 
-    local installedVersion=$(getConfigParamFromFile "version")
-    local isVersionEqual=$(compareVersion "$installedVersion" "$ESPOCRM_VERSION" ">=")
-
-    if [ -n "$isVersionEqual" ]; then
-        echo >&2 "Upgrade process is finished. EspoCRM version is $installedVersion."
-
-        setPermissions
-        return
-    fi
-
-    echo >&2 "Start upgrading process from version $installedVersion."
-
-    if ! runUpgradeStep ; then
-        return
-    fi
-
-    actionUpgrade
-}
-
-runUpgradeStep() {
-    local result=$(php command.php upgrade -y --toVersion="$ESPOCRM_VERSION")
-
-    if [[ "$result" == *"Error:"* ]]; then
-        echo >&2 "error: Upgrade error, more details:"
-        echo >&2 "$result"
-
-        return 1 #false
-    fi
-
-    return 0 #true
+    echo >&2 "error: Unable to upgrade the instance. Starting the current version."
 }
 
 installEspocrm() {
-    echo >&2 "Start EspoCRM installation"
+    echo >&2 "info: Start EspoCRM installation"
 
     declare -a preferences=()
 
@@ -227,6 +194,18 @@ runInstallationStep() {
     fi
 }
 
+isCustomPath() {
+    local path="$1"
+
+    for customDir in "${CUSTOM_RESOURCE_LIST[@]}"; do
+        if [[ "$path" == "$customDir"* ]]; then
+            return 0 # true
+        fi
+    done
+
+    return 1 # false
+}
+
 setPermissions() {
     find /var/www/html -type d -exec chmod 755 {} +
     find /var/www/html -type f -exec chmod 644 {} +
@@ -247,7 +226,6 @@ setEnvironments() {
 # ------------------------- START -------------------------------------
 # Global variables
 SOURCE_FILES="/usr/src/espocrm"
-MAX_UPGRADE_COUNT=20
 
 CUSTOM_RESOURCE_LIST=(
     "/var/www/html/data"
@@ -284,38 +262,7 @@ setEnvironments
 
 runFileIntegrity
 
-installationType=$(installationType)
-
-case $installationType in
-    install)
-        echo >&2 "Run \"install\" action."
-        actionInstall
-        ;;
-
-    reinstall)
-        echo >&2 "Run \"reinstall\" action."
-        actionReinstall
-        ;;
-
-    upgrade)
-        echo >&2 "Run \"upgrade\" action."
-
-        if verifyDatabaseReady ; then
-            UPGRADE_NUMBER=0
-            actionUpgrade
-        else
-            echo "error: Unable to upgrade the instance. Starting the current version."
-        fi
-        ;;
-
-    skip)
-        ;;
-
-    *)
-        echo >&2 "error: Unknown installation type [$installationType]"
-        exit 1
-        ;;
-esac
+start
 
 applyConfigEnvironments
 # ------------------------- END -------------------------------------
