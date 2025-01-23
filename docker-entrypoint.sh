@@ -96,6 +96,9 @@ installEspocrm() {
     for optionName in "${!OPTIONAL_PARAMS[@]}"
     do
         local varName="${OPTIONAL_PARAMS[$optionName]}"
+
+        setEnvValue "${varName}" "${!varName-}"
+
         if [ -n "${!varName-}" ]; then
             preferences+=("${optionName}=${!varName}")
         fi
@@ -204,9 +207,7 @@ declare -A OPTIONAL_PARAMS=(
 
 for defaultParam in "${!DEFAULTS[@]}"
 do
-    if [ -z "${!defaultParam-}" ]; then
-        declare "${defaultParam}"="${DEFAULTS[$defaultParam]}"
-    fi
+    setEnvValue "${defaultParam}" "${DEFAULTS[$defaultParam]}"
 done
 
 installationType=$(installationType)

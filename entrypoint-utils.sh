@@ -306,3 +306,21 @@ saveConfigArrayValue() {
 
     saveConfigArrayParam "$key1" "$key2" "$value"
 }
+
+setEnvValue() {
+    local var="$1"
+    local fileVar="${var}_FILE"
+    local def="${2:-}"
+    if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
+        printf >&2 "error: Both $var and $fileVar are set"
+        exit 1
+    fi
+    local val="$def"
+    if [ "${!var:-}" ]; then
+        val="${!var}"
+    elif [ "${!fileVar:-}" ]; then
+        val="$(< "${!fileVar}")"
+    fi
+    export "$var"="$val"
+    unset "$fileVar"
+}
