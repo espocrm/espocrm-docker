@@ -110,6 +110,7 @@ actionUpgrade() {
 
     if verifyDatabaseReady ; then
         php /var/www/html/command.php migrate
+        setPermissions
         return
     fi
 
@@ -207,13 +208,18 @@ isCustomPath() {
 }
 
 setPermissions() {
+    local owner="$(id -u)"
+    local group="$(id -g)"
+
     find /var/www/html -type d -exec chmod 755 {} +
     find /var/www/html -type f -exec chmod 644 {} +
 
-    chown -R root:root /var/www/html
+    chown -R $owner:$group /var/www/html
 
     chown www-data:www-data /var/www/html
     chown -R www-data:www-data "${CUSTOM_RESOURCE_LIST[@]}"
+
+    chmod +x bin/command
 }
 
 setEnvironments() {
