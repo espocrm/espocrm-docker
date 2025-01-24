@@ -33,7 +33,7 @@ runFileIntegrity() {
 
     cp -a "$SOURCE_FILES/." "$documentRoot/"
 
-    local backupDir="$documentRoot/data/.backup/integrity/$(date +'%Y%m%d-%H%M%S')"
+    local backupDir="$documentRoot/data/.backup/upgrades/$(date +'%Y%m%d-%H%M%S')"
 
     # find extra files
     diff -rq "$documentRoot" "$SOURCE_FILES" | grep "Only in $documentRoot" | while read -r line; do
@@ -48,7 +48,7 @@ runFileIntegrity() {
             continue
         fi
 
-        echo >&2 "info: [Integrity] Extra item found: $fullPath"
+        echo >&2 "info: [Integrity] Extra file found: $fullPath"
 
         local backupPath="$backupDir/$path"
 
@@ -109,6 +109,7 @@ actionUpgrade() {
     echo >&2 "info: Run \"upgrade\" action."
 
     if verifyDatabaseReady ; then
+        rm -rf /var/www/html/data/cache
         php /var/www/html/command.php migrate
         setPermissions
         return
