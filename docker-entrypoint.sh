@@ -6,11 +6,19 @@ set -euo pipefail
 # END: entrypoint-utils.sh
 
 start() {
-    if [ -f "/var/www/html/data/config-internal.php" ]; then
+    if [ -f "/var/www/html/data/config.php" ]; then
         local isInstalled=$(getConfigParamFromFile "isInstalled")
 
         if [ -n "$isInstalled" ] && [ "$isInstalled" = 1 ]; then
-            actionUpgrade
+            local installedVersion=$(getConfigParamFromFile "version")
+            local isVersionGreater=$(compareVersion "$ESPOCRM_VERSION" "$installedVersion" ">")
+
+            if [ -n "$isVersionGreater" ]; then
+                actionUpgrade
+                return
+            fi
+
+            # no need any action
             return
         fi
 
@@ -21,76 +29,15 @@ start() {
     actionInstall
 }
 
-runFileIntegrity() {
-    echo >&2 "info: [Integrity] Start"
+actionInstall() {
+    echo >&2 "info: Run \"install\" action."
 
     if [ ! -d "$SOURCE_FILES" ]; then
         echo >&2 "error: Source files [$SOURCE_FILES] are not found."
         exit 1
     fi
 
-    local documentRoot="/var/www/html"
-
-    cp -a "$SOURCE_FILES/." "$documentRoot/"
-
-    local backupDir="$documentRoot/data/.backup/upgrades/$(date +'%Y%m%d-%H%M%S')"
-
-    # find extra files
-    diff -rq "$documentRoot" "$SOURCE_FILES" | grep "Only in $documentRoot" | while read -r line; do
-        local path=${line/"Only in $documentRoot: "/}
-
-        path=${path/"Only in $documentRoot/"/}
-        path=${path/": "/\/}
-
-        local fullPath="$documentRoot/$path"
-
-        if isCustomPath "$fullPath"; then
-            continue
-        fi
-
-        echo >&2 "info: [Integrity] Extra file found: $fullPath"
-
-        local backupPath="$backupDir/$path"
-
-        if [ -f "$fullPath" ]; then
-            echo >&2 "info: [Integrity] Backup file to: $backupPath"
-
-            mkdir -p $(dirname "$backupPath")
-            cp "$fullPath" "$backupPath"
-
-            echo >&2 "info: [Integrity] Delete file: $fullPath"
-            rm -f "$fullPath"
-
-            continue
-        fi
-
-        if [ -d "$fullPath" ]; then
-            echo >&2 "info: [Integrity] Backup directory to: $backupPath"
-
-            mkdir -p "$backupPath"
-            cp -a "$fullPath"/. "$backupPath"/
-
-            echo >&2 "info: [Integrity] Delete directory: $fullPath"
-            rm -rf "$fullPath"
-
-            continue
-        fi
-    done || true
-
-    # remove empty directories
-    find "$documentRoot" -type d -empty | while read -r emptyDir; do
-        if isCustomPath "$emptyDir"; then
-            continue
-        fi
-
-        rmdir "$emptyDir"
-    done
-
-    echo >&2 "info: [Integrity] End"
-}
-
-actionInstall() {
-    echo >&2 "info: Run \"install\" action."
+    cp -a "$SOURCE_FILES/." /var/www/html/
 
     installEspocrm
 }
@@ -102,20 +49,62 @@ actionReinstall() {
         sed -i "s/'isInstalled' => true/'isInstalled' => false/g" "/var/www/html/install/config.php"
     fi
 
+    rm -rf /var/www/html/data/cache
+
     installEspocrm
 }
 
 actionUpgrade() {
     echo >&2 "info: Run \"upgrade\" action."
 
+    MAX_UPGRADE_COUNT=20
+    UPGRADE_NUMBER=0
+
     if verifyDatabaseReady ; then
-        rm -rf /var/www/html/data/cache
-        php /var/www/html/command.php migrate
+        runUpgradeProcess
         setPermissions
         return
     fi
 
     echo >&2 "error: Unable to upgrade the instance. Starting the current version."
+}
+
+runUpgradeProcess() {
+    UPGRADE_NUMBER=$((UPGRADE_NUMBER+1))
+
+    if [ $UPGRADE_NUMBER -gt $MAX_UPGRADE_COUNT ];then
+        echo >&2 "error: The MAX_UPGRADE_COUNT exceed. The upgrading process has been stopped."
+        return
+    fi
+
+    local installedVersion=$(getConfigParamFromFile "version")
+    local isVersionEqual=$(compareVersion "$installedVersion" "$ESPOCRM_VERSION" ">=")
+
+    if [ -n "$isVersionEqual" ]; then
+        echo >&2 "info: Upgrading is finished. EspoCRM version is $installedVersion."
+        return
+    fi
+
+    echo >&2 "info: Start upgrading from version $installedVersion."
+
+    if ! runUpgradeStep ; then
+        return
+    fi
+
+    runUpgradeProcess
+}
+
+runUpgradeStep() {
+    local result=$(php command.php upgrade -y --toVersion="$ESPOCRM_VERSION")
+
+    if [[ "$result" == *"Error:"* ]]; then
+        echo >&2 "error: Upgrade error, more details:"
+        echo >&2 "$result"
+
+        return 1 #false
+    fi
+
+    return 0 #true
 }
 
 installEspocrm() {
@@ -170,7 +159,7 @@ installEspocrm() {
 
     setPermissions
 
-    echo >&2 "End EspoCRM installation"
+    echo >&2 "info: End EspoCRM installation"
 }
 
 runInstallationStep() {
@@ -266,8 +255,6 @@ declare -A OPTIONAL_PARAMS=(
 )
 
 setEnvironments
-
-runFileIntegrity
 
 start
 
