@@ -27,7 +27,7 @@ RUN set -ex; \
     \
 # Install php-zmq
     cd /usr; \
-    curl -fSL https://github.com/zeromq/php-zmq/archive/ee5fbc693f07b2d6f0d9fd748f131be82310f386.tar.gz -o php-zmq.tar.gz; \
+    curl -fSL https://github.com/zeromq/php-zmq/archive/616b6c64ffd3866ed038615494306dd464ab53fc.tar.gz -o php-zmq.tar.gz; \
     tar -zxf php-zmq.tar.gz; \
     cd php-zmq*; \
     phpize && ./configure; \
