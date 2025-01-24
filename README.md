@@ -5,7 +5,6 @@ This repository is the official Docker image for EspoCRM.
 Article map:
 
 - [Usage](#usage)
-- [Legacy Usage (EspoCRM v6.1.7 and earlier)](#legacy-usage-espocrm-v617-and-earlier)
 - [Usage (only for development)](#usage-only-for-development)
 - [Upgrading](#upgrading)
 - [Documentation](#documentation)
