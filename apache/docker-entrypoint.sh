@@ -331,7 +331,7 @@ setEnvValue() {
 }
 # END: entrypoint-utils.sh
 
-installationType() {
+start() {
     if [ -f "/var/www/html/data/config.php" ]; then
         local isInstalled=$(getConfigParamFromFile "isInstalled")
 
@@ -340,45 +340,66 @@ installationType() {
             local isVersionGreater=$(compareVersion "$ESPOCRM_VERSION" "$installedVersion" ">")
 
             if [ -n "$isVersionGreater" ]; then
-                echo "upgrade"
+                actionUpgrade
                 return
             fi
 
-            echo "skip"
+            # no need any action
             return
         fi
 
-        echo "reinstall"
+        actionReinstall
         return
     fi
 
-    echo "install"
+    actionInstall
 }
 
 actionInstall() {
+    echo >&2 "info: Run \"install\" action."
+
     if [ ! -d "$SOURCE_FILES" ]; then
         echo >&2 "error: Source files [$SOURCE_FILES] are not found."
         exit 1
     fi
 
-    cp -a "$SOURCE_FILES/." "/var/www/html/"
+    cp -a "$SOURCE_FILES/." /var/www/html/
 
     installEspocrm
 }
 
 actionReinstall() {
+    echo >&2 "info: Run \"reinstall\" action."
+
     if [ -f "/var/www/html/install/config.php" ]; then
         sed -i "s/'isInstalled' => true/'isInstalled' => false/g" "/var/www/html/install/config.php"
     fi
+
+    rm -rf /var/www/html/data/cache
 
     installEspocrm
 }
 
 actionUpgrade() {
+    echo >&2 "info: Run \"upgrade\" action."
+
+    MAX_UPGRADE_COUNT=20
+    UPGRADE_NUMBER=0
+
+    if verifyDatabaseReady ; then
+        runUpgradeProcess
+        setPermissions
+        return
+    fi
+
+    echo >&2 "error: Unable to upgrade the instance. Starting the current version."
+}
+
+runUpgradeProcess() {
     UPGRADE_NUMBER=$((UPGRADE_NUMBER+1))
 
     if [ $UPGRADE_NUMBER -gt $MAX_UPGRADE_COUNT ];then
-        echo >&2 "The MAX_UPGRADE_COUNT exceed. The upgrading process has been stopped."
+        echo >&2 "error: The MAX_UPGRADE_COUNT exceed. The upgrading process has been stopped."
         return
     fi
 
@@ -386,19 +407,17 @@ actionUpgrade() {
     local isVersionEqual=$(compareVersion "$installedVersion" "$ESPOCRM_VERSION" ">=")
 
     if [ -n "$isVersionEqual" ]; then
-        echo >&2 "Upgrade process is finished. EspoCRM version is $installedVersion."
-
-        setPermissions
+        echo >&2 "info: Upgrading is finished. EspoCRM version is $installedVersion."
         return
     fi
 
-    echo >&2 "Start upgrading process from version $installedVersion."
+    echo >&2 "info: Start upgrading from version $installedVersion."
 
     if ! runUpgradeStep ; then
         return
     fi
 
-    actionUpgrade
+    runUpgradeProcess
 }
 
 runUpgradeStep() {
@@ -415,7 +434,7 @@ runUpgradeStep() {
 }
 
 installEspocrm() {
-    echo >&2 "Start EspoCRM installation"
+    echo >&2 "info: Start EspoCRM installation"
 
     declare -a preferences=()
 
@@ -466,7 +485,7 @@ installEspocrm() {
 
     setPermissions
 
-    echo >&2 "End EspoCRM installation"
+    echo >&2 "info: End EspoCRM installation"
 }
 
 runInstallationStep() {
@@ -492,20 +511,50 @@ runInstallationStep() {
     fi
 }
 
-setPermissions() {
-    find . -type d -exec chmod 755 {} +
-    find . -type f -exec chmod 644 {} +
+isCustomPath() {
+    local path="$1"
 
-    chown -R root:root /var/www/html
+    for customDir in "${CUSTOM_RESOURCE_LIST[@]}"; do
+        if [[ "$path" == "$customDir"* ]]; then
+            return 0 # true
+        fi
+    done
+
+    return 1 # false
+}
+
+setPermissions() {
+    local owner="$(id -u)"
+    local group="$(id -g)"
+
+    find /var/www/html -type d -exec chmod 755 {} +
+    find /var/www/html -type f -exec chmod 644 {} +
+
+    chown -R $owner:$group /var/www/html
 
     chown www-data:www-data /var/www/html
-    chown -R www-data:www-data /var/www/html/{data,custom,client/custom}
+    chown -R www-data:www-data "${CUSTOM_RESOURCE_LIST[@]}"
+
+    chmod +x bin/command
+}
+
+setEnvironments() {
+    for defaultParam in "${!DEFAULTS[@]}"
+    do
+        setEnvValue "${defaultParam}" "${DEFAULTS[$defaultParam]}"
+    done
 }
 
 # ------------------------- START -------------------------------------
 # Global variables
 SOURCE_FILES="/usr/src/espocrm"
-MAX_UPGRADE_COUNT=20
+
+CUSTOM_RESOURCE_LIST=(
+    "/var/www/html/data"
+    "/var/www/html/custom"
+    "/var/www/html/client/custom"
+    "/var/www/html/install/config.php"
+)
 
 declare -A DEFAULTS=(
     ['ESPOCRM_DATABASE_PLATFORM']='Mysql'
@@ -531,43 +580,9 @@ declare -A OPTIONAL_PARAMS=(
     ['decimalMark']='ESPOCRM_DECIMAL_MARK'
 )
 
-for defaultParam in "${!DEFAULTS[@]}"
-do
-    setEnvValue "${defaultParam}" "${DEFAULTS[$defaultParam]}"
-done
+setEnvironments
 
-installationType=$(installationType)
-
-case $installationType in
-    install)
-        echo >&2 "Run \"install\" action."
-        actionInstall
-        ;;
-
-    reinstall)
-        echo >&2 "Run \"reinstall\" action."
-        actionReinstall
-        ;;
-
-    upgrade)
-        echo >&2 "Run \"upgrade\" action."
-
-        if verifyDatabaseReady ; then
-            UPGRADE_NUMBER=0
-            actionUpgrade
-        else
-            echo "error: Unable to upgrade the instance. Starting the current version."
-        fi
-        ;;
-
-    skip)
-        ;;
-
-    *)
-        echo >&2 "error: Unknown installation type [$installationType]"
-        exit 1
-        ;;
-esac
+start
 
 applyConfigEnvironments
 # ------------------------- END -------------------------------------
