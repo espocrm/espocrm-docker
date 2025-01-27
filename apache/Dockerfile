@@ -11,9 +11,7 @@ RUN set -ex; \
     # Install php libs
     apt-get install -y --no-install-recommends \
         libpq-dev \
-        libjpeg-dev \
         libpng-dev \
-        libmagickwand-dev \
         libwebp-dev \
         libfreetype6-dev \
         libzip-dev \
@@ -25,23 +23,30 @@ RUN set -ex; \
         zlib1g-dev \
     ; \
     \
-# Install php-zmq
-    cd /usr; \
-    curl -fSL https://github.com/zeromq/php-zmq/archive/616b6c64ffd3866ed038615494306dd464ab53fc.tar.gz -o php-zmq.tar.gz; \
-    tar -zxf php-zmq.tar.gz; \
-    cd php-zmq*; \
-    phpize && ./configure; \
-    make; \
-    make install; \
-    cd .. && rm -rf php-zmq*; \
-# END: Install php-zmq
+    # Install php-zmq
+        cd /usr; \
+        curl -fSL https://github.com/zeromq/php-zmq/archive/616b6c64ffd3866ed038615494306dd464ab53fc.tar.gz -o php-zmq.tar.gz; \
+        tar -zxf php-zmq.tar.gz; \
+        cd php-zmq*; \
+        phpize && ./configure; \
+        make; \
+        make install; \
+        cd .. && rm -rf php-zmq*; \
+    # END: Install php-zmq
     \
-    debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
-    docker-php-ext-configure ldap --with-libdir="lib/$debMultiarch"; \
-    docker-php-ext-configure gd --with-jpeg --with-freetype --with-webp; \
-    PHP_OPENSSL=yes docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
+    docker-php-ext-configure ldap \
+        --with-libdir="lib/$(dpkg-architecture --query DEB_BUILD_MULTIARCH)" \
+    ; \
+    docker-php-ext-configure gd \
+        --with-freetype \
+        --with-webp \
+    ; \
+    PHP_OPENSSL=yes docker-php-ext-configure imap \
+        --with-kerberos \
+        --with-imap-ssl \
+    ; \
     \
-    docker-php-ext-install \
+    docker-php-ext-install -j$(nproc) \
         pdo_pgsql \
         pdo_mysql \
         zip \
@@ -74,20 +79,20 @@ RUN set -ex; \
         unzip \
         libldap-common \
     ; \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # php.ini
 RUN { \
-	echo 'expose_php = Off'; \
-	echo 'display_errors = Off'; \
-	echo 'display_startup_errors = Off'; \
-	echo 'log_errors = On'; \
-	echo 'memory_limit=256M'; \
-	echo 'max_execution_time=180'; \
-	echo 'max_input_time=180'; \
-	echo 'post_max_size=30M'; \
-	echo 'upload_max_filesize=30M'; \
-	echo 'date.timezone=UTC'; \
+    echo 'expose_php = Off'; \
+    echo 'display_errors = Off'; \
+    echo 'display_startup_errors = Off'; \
+    echo 'log_errors = On'; \
+    echo 'memory_limit=256M'; \
+    echo 'max_execution_time=180'; \
+    echo 'max_input_time=180'; \
+    echo 'post_max_size=30M'; \
+    echo 'upload_max_filesize=30M'; \
+    echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
 RUN a2enmod rewrite;
@@ -99,10 +104,10 @@ WORKDIR /var/www/html
 
 RUN set -ex; \
     curl -fSL "https://www.espocrm.com/downloads/EspoCRM-9.0.0.zip" -o EspoCRM.zip; \
-	echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
+    echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
     mv "/usr/src/EspoCRM-9.0.0" /usr/src/espocrm; \
-	rm EspoCRM.zip
+    rm EspoCRM.zip
 
 COPY ./docker-*.sh  /usr/local/bin/
 
