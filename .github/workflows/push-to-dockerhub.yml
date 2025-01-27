@@ -40,7 +40,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./apache
-          platforms: linux/386,linux/amd64,linux/arm/v5,linux/arm/v7
+          platforms: linux/386,linux/amd64,linux/arm/v5,linux/arm/v7,linux/arm64/v8
           push: true
           labels: ${{ steps.meta.outputs.labels }}
           tags: |
@@ -68,7 +68,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./fpm
-          platforms: linux/386,linux/amd64,linux/arm/v5,linux/arm/v7
+          platforms: linux/386,linux/amd64,linux/arm/v5,linux/arm/v7,linux/arm64/v8
           push: true
           labels: ${{ steps.meta.outputs.labels }}
           tags: |
@@ -92,7 +92,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./fpm-alpine
-          platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7
+          platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8
           push: true
           labels: ${{ steps.meta.outputs.labels }}
           tags: |
