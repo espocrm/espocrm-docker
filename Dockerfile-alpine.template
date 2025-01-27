@@ -9,6 +9,7 @@ RUN set -ex; \
         postgresql-dev \
         libzip-dev \
         libpng-dev \
+        libjpeg-turbo-dev \
         libwebp-dev \
         freetype-dev \
         openldap-dev \
@@ -34,6 +35,7 @@ RUN set -ex; \
     \
     docker-php-ext-configure gd \
         --with-freetype \
+        --with-jpeg=/usr/include \
         --with-webp \
     ; \
     docker-php-ext-configure imap \
@@ -42,10 +44,10 @@ RUN set -ex; \
     ; \
     \
     docker-php-ext-install -j "$(nproc)" \
+        gd \
         pdo_pgsql \
         pdo_mysql \
         zip \
-        gd \
         imap \
         ldap \
         exif \

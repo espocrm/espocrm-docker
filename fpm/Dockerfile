@@ -12,6 +12,7 @@ RUN set -ex; \
     apt-get install -y --no-install-recommends \
         libpq-dev \
         libpng-dev \
+        libjpeg-dev \
         libwebp-dev \
         libfreetype6-dev \
         libzip-dev \
@@ -39,6 +40,7 @@ RUN set -ex; \
     ; \
     docker-php-ext-configure gd \
         --with-freetype \
+        --with-jpeg=/usr \
         --with-webp \
     ; \
     PHP_OPENSSL=yes docker-php-ext-configure imap \
@@ -47,10 +49,10 @@ RUN set -ex; \
     ; \
     \
     docker-php-ext-install -j$(nproc) \
+        gd \
         pdo_pgsql \
         pdo_mysql \
         zip \
-        gd \
         imap \
         ldap \
         exif \
