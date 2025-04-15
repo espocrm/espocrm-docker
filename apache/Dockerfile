@@ -99,16 +99,16 @@ RUN { \
 
 RUN a2enmod rewrite;
 
-ENV ESPOCRM_VERSION 9.0.6
-ENV ESPOCRM_SHA256 c22ddfbed4f32216c846c60b465c1d7994916cd706a3708d0d2bc2638df85301
+ENV ESPOCRM_VERSION 9.0.7
+ENV ESPOCRM_SHA256 ee2611019aafe808c2dd01fc14f45f8028cd9e6d555e5cbdecf0525e2a92cc14
 
 WORKDIR /var/www/html
 
 RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-9.0.6.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-9.0.7.zip" -o EspoCRM.zip; \
     echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-9.0.6" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-9.0.7" /usr/src/espocrm; \
     rm EspoCRM.zip
 
 COPY ./docker-*.sh  /usr/local/bin/
