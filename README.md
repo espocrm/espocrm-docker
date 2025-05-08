@@ -27,6 +27,12 @@ services:
     volumes:
       - espocrm-db:/var/lib/mysql
     restart: always
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 20s
+      start_period: 10s
+      timeout: 10s
+      retries: 3
 
   espocrm:
     image: espocrm/espocrm
@@ -43,7 +49,8 @@ services:
       - espocrm:/var/www/html
     restart: always
     depends_on:
-      - espocrm-db
+      espocrm-db:
+        condition: service_healthy
     ports:
       - 8080:80
 
@@ -88,15 +95,23 @@ Example `docker-compose.yml`:
 ```
 services:
 
-  mysql:
-    container_name: mysql
-    image: mysql:8
-    command: --default-authentication-plugin=mysql_native_password
+  espocrm-db:
+    container_name: espocrm-db
+    image: mariadb:latest
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: example
+      MARIADB_ROOT_PASSWORD: root_password
+      MARIADB_DATABASE: espocrm
+      MARIADB_USER: espocrm
+      MARIADB_PASSWORD: database_password
     volumes:
-      - mysql:/var/lib/mysql
+      - espocrm-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 20s
+      start_period: 10s
+      timeout: 10s
+      retries: 3
 
   espocrm:
     container_name: espocrm
@@ -104,11 +119,14 @@ services:
       context: ./apache
       dockerfile: Dockerfile
     environment:
-      ESPOCRM_DATABASE_PASSWORD: example
+      ESPOCRM_DATABASE_PASSWORD: database_password
       ESPOCRM_ADMIN_USERNAME: admin
       ESPOCRM_ADMIN_PASSWORD: password
       ESPOCRM_SITE_URL: "http://localhost:8080"
     restart: always
+    depends_on:
+      espocrm-db:
+        condition: service_healthy
     ports:
       - 8080:80
     volumes:
@@ -125,7 +143,7 @@ services:
     entrypoint: docker-daemon.sh
 
 volumes:
-  mysql:
+  espocrm-db:
   espocrm:
 ```
 
