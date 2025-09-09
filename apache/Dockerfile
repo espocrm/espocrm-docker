@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.3-apache-bookworm
 
 LABEL org.opencontainers.image.source=https://github.com/espocrm/espocrm
 LABEL org.opencontainers.image.description="EspoCRM is an Open Source CRM. Try for Free."
