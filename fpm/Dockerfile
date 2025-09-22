@@ -17,8 +17,6 @@ RUN set -ex; \
         libfreetype6-dev \
         libzip-dev \
         libxml2-dev \
-        libc-client-dev \
-        libkrb5-dev \
         libldap2-dev \
         libzmq5-dev \
         zlib1g-dev \
@@ -35,6 +33,8 @@ RUN set -ex; \
         cd .. && rm -rf php-zmq*; \
     # END: Install php-zmq
     \
+    pecl install ev; \
+    \
     docker-php-ext-configure ldap \
         --with-libdir="lib/$(dpkg-architecture --query DEB_BUILD_MULTIARCH)" \
     ; \
@@ -43,17 +43,12 @@ RUN set -ex; \
         --with-jpeg=/usr \
         --with-webp \
     ; \
-    PHP_OPENSSL=yes docker-php-ext-configure imap \
-        --with-kerberos \
-        --with-imap-ssl \
-    ; \
     \
     docker-php-ext-install -j$(nproc) \
         gd \
         pdo_pgsql \
         pdo_mysql \
         zip \
-        imap \
         ldap \
         exif \
         pcntl \
@@ -62,6 +57,7 @@ RUN set -ex; \
     ; \
     docker-php-ext-enable \
         zmq \
+        ev \
     ; \
     \
 # reset a list of apt-mark
@@ -97,16 +93,16 @@ RUN { \
     echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
-ENV ESPOCRM_VERSION 9.1.8
-ENV ESPOCRM_SHA256 4932fd475adbd77fae65abeb4a9606ce7e5b9def1a940c270d131fccd2655112
+ENV ESPOCRM_VERSION 9.1.9
+ENV ESPOCRM_SHA256 fa846ee8e5e684255b05def8cc38ee0a027831f7af251e6d59e628ff3ee65646
 
 WORKDIR /var/www/html
 
 RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-9.1.8.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-9.1.9.zip" -o EspoCRM.zip; \
     echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-9.1.8" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-9.1.9" /usr/src/espocrm; \
     rm EspoCRM.zip
 
 COPY ./docker-*.sh  /usr/local/bin/
