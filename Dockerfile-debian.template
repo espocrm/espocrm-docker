@@ -17,8 +17,6 @@ RUN set -ex; \
         libfreetype6-dev \
         libzip-dev \
         libxml2-dev \
-        libc-client-dev \
-        libkrb5-dev \
         libldap2-dev \
         libzmq5-dev \
         zlib1g-dev \
@@ -43,17 +41,12 @@ RUN set -ex; \
         --with-jpeg=/usr \
         --with-webp \
     ; \
-    PHP_OPENSSL=yes docker-php-ext-configure imap \
-        --with-kerberos \
-        --with-imap-ssl \
-    ; \
     \
     docker-php-ext-install -j$(nproc) \
         gd \
         pdo_pgsql \
         pdo_mysql \
         zip \
-        imap \
         ldap \
         exif \
         pcntl \

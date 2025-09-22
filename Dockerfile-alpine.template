@@ -13,8 +13,6 @@ RUN set -ex; \
         libwebp-dev \
         freetype-dev \
         openldap-dev \
-        imap-dev \
-        krb5-dev \
         openssl-dev \
         libzmq \
         zeromq-dev \
@@ -38,17 +36,12 @@ RUN set -ex; \
         --with-jpeg=/usr/include \
         --with-webp \
     ; \
-    docker-php-ext-configure imap \
-        --with-kerberos \
-        --with-imap-ssl \
-    ; \
     \
     docker-php-ext-install -j "$(nproc)" \
         gd \
         pdo_pgsql \
         pdo_mysql \
         zip \
-        imap \
         ldap \
         exif \
         pcntl \
