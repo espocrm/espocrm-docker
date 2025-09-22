@@ -33,6 +33,8 @@ RUN set -ex; \
         cd .. && rm -rf php-zmq*; \
     # END: Install php-zmq
     \
+    pecl install ev; \
+    \
     docker-php-ext-configure ldap \
         --with-libdir="lib/$(dpkg-architecture --query DEB_BUILD_MULTIARCH)" \
     ; \
@@ -55,6 +57,7 @@ RUN set -ex; \
     ; \
     docker-php-ext-enable \
         zmq \
+        ev \
     ; \
     \
 # reset a list of apt-mark

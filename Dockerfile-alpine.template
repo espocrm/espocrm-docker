@@ -31,6 +31,8 @@ RUN set -ex; \
         cd .. && rm -rf php-zmq*; \
     # END: Install php-zmq
     \
+    pecl install ev; \
+    \
     docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg=/usr/include \
@@ -48,7 +50,9 @@ RUN set -ex; \
         posix \
         bcmath \
     ; \
-    docker-php-ext-enable zmq
+    docker-php-ext-enable \
+        zmq \
+        ev
 
 # php.ini
 RUN { \
