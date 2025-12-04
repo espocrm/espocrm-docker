@@ -57,6 +57,7 @@ RUN set -ex; \
 # php.ini
 RUN { \
     echo 'expose_php = Off'; \
+    echo 'error_reporting = E_ALL & ~E_NOTICE & ~E_DEPRECATED'; \
     echo 'display_errors = Off'; \
     echo 'display_startup_errors = Off'; \
     echo 'log_errors = On'; \
