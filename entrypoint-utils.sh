@@ -27,7 +27,8 @@ getConfigParamFromFile() {
             \$config=include('/var/www/html/data/state.php');
 
             if (array_key_exists('$name', \$config)) {
-                die(\$config['$name']);
+                echo \$config['$name'];
+                exit;
             }
         }
 
@@ -35,7 +36,8 @@ getConfigParamFromFile() {
             \$config=include('/var/www/html/data/config-internal.php');
 
             if (array_key_exists('$name', \$config)) {
-                die(\$config['$name']);
+                echo \$config['$name'];
+                exit;
             }
         }
 
@@ -43,7 +45,8 @@ getConfigParamFromFile() {
             \$config=include('/var/www/html/data/config.php');
 
             if (array_key_exists('$name', \$config)) {
-                die(\$config['$name']);
+                echo \$config['$name'];
+                exit;
             }
         }
     "
@@ -150,10 +153,11 @@ isDatabaseReady() {
             \$helper->createPDO();
         }
         catch (Exception \$e) {
-            die(false);
+            echo false;
+            exit;
         }
 
-        die(true);
+        echo true;
     "
 }
 
