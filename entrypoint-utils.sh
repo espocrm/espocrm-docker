@@ -124,14 +124,14 @@ checkInstanceReady() {
     local isInstalled=$(getConfigParamFromFile "isInstalled")
 
     if [ -z "$isInstalled" ] || [ "$isInstalled" != 1 ]; then
-        echo >&2 "Instance is not ready: waiting for the installation"
+        echo >&2 "Instance is not ready: installation in progress"
         exit 0
     fi
 
     local maintenanceMode=$(getConfigParamFromFile "maintenanceMode")
 
     if [ -n "$maintenanceMode" ] && [ "$maintenanceMode" = 1 ]; then
-        echo >&2 "Instance is not ready: waiting for the upgrade"
+        echo >&2 "Instance is not ready: waiting for maintenance mode to be disabled"
         exit 0
     fi
 
@@ -170,11 +170,11 @@ verifyDatabaseReady() {
             return 0 #true
         fi
 
-        echo >&2 "Waiting Database for receiving connections..."
+        echo >&2 "Waiting for database connection (attempt $i/40)..."
         sleep 3
     done
 
-    echo >&2 "error: Database is not available"
+    echo >&2 "error: Database connection failed"
     return 1 #false
 }
 
