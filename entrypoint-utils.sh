@@ -23,6 +23,14 @@ getConfigParamFromFile() {
     local name="$1"
 
     php -r "
+        if (file_exists('/var/www/html/data/state.php')) {
+            \$config=include('/var/www/html/data/state.php');
+
+            if (array_key_exists('$name', \$config)) {
+                die(\$config['$name']);
+            }
+        }
+
         if (file_exists('/var/www/html/data/config-internal.php')) {
             \$config=include('/var/www/html/data/config-internal.php');
 
@@ -134,12 +142,12 @@ isDatabaseReady() {
         require_once('/var/www/html/bootstrap.php');
 
         \$app = new \Espo\Core\Application();
-        \$config = \$app->getContainer()->get('config');
 
-        \$helper = new \Espo\Core\Utils\Database\Helper(\$config);
+        \$injectableFactory = \$app->getContainer()->get('injectableFactory');
+        \$helper = \$injectableFactory->create('\\Espo\\Core\\Utils\\Database\\Helper');
 
         try {
-            \$helper->createPdoConnection();
+            \$helper->createPDO();
         }
         catch (Exception \$e) {
             die(false);
