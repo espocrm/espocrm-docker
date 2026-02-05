@@ -28,11 +28,21 @@ getConfigParamFromFile() {
     local name="$1"
 
     php -r "
+        if (file_exists('/var/www/html/data/state.php')) {
+            \$config=include('/var/www/html/data/state.php');
+
+            if (array_key_exists('$name', \$config)) {
+                echo \$config['$name'];
+                exit;
+            }
+        }
+
         if (file_exists('/var/www/html/data/config-internal.php')) {
             \$config=include('/var/www/html/data/config-internal.php');
 
             if (array_key_exists('$name', \$config)) {
-                die(\$config['$name']);
+                echo \$config['$name'];
+                exit;
             }
         }
 
@@ -40,7 +50,8 @@ getConfigParamFromFile() {
             \$config=include('/var/www/html/data/config.php');
 
             if (array_key_exists('$name', \$config)) {
-                die(\$config['$name']);
+                echo \$config['$name'];
+                exit;
             }
         }
     "
@@ -118,14 +129,14 @@ checkInstanceReady() {
     local isInstalled=$(getConfigParamFromFile "isInstalled")
 
     if [ -z "$isInstalled" ] || [ "$isInstalled" != 1 ]; then
-        echo >&2 "Instance is not ready: waiting for the installation"
+        echo >&2 "Instance is not ready: installation in progress"
         exit 0
     fi
 
     local maintenanceMode=$(getConfigParamFromFile "maintenanceMode")
 
     if [ -n "$maintenanceMode" ] && [ "$maintenanceMode" = 1 ]; then
-        echo >&2 "Instance is not ready: waiting for the upgrade"
+        echo >&2 "Instance is not ready: waiting for maintenance mode to be disabled"
         exit 0
     fi
 
@@ -139,18 +150,19 @@ isDatabaseReady() {
         require_once('/var/www/html/bootstrap.php');
 
         \$app = new \Espo\Core\Application();
-        \$config = \$app->getContainer()->get('config');
 
-        \$helper = new \Espo\Core\Utils\Database\Helper(\$config);
+        \$injectableFactory = \$app->getContainer()->get('injectableFactory');
+        \$helper = \$injectableFactory->create('\\Espo\\Core\\Utils\\Database\\Helper');
 
         try {
-            \$helper->createPdoConnection();
+            \$helper->createPDO();
         }
         catch (Exception \$e) {
-            die(false);
+            echo false;
+            exit;
         }
 
-        die(true);
+        echo true;
     "
 }
 
@@ -163,11 +175,11 @@ verifyDatabaseReady() {
             return 0 #true
         fi
 
-        echo >&2 "Waiting Database for receiving connections..."
+        echo >&2 "Waiting for database connection (attempt $i/40)..."
         sleep 3
     done
 
-    echo >&2 "error: Database is not available"
+    echo >&2 "error: Database connection failed"
     return 1 #false
 }
 

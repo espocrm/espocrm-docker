@@ -1,4 +1,4 @@
-FROM php:8.3-fpm
+FROM php:8.4-fpm
 
 LABEL org.opencontainers.image.source=https://github.com/espocrm/espocrm
 LABEL org.opencontainers.image.description="EspoCRM is an Open Source CRM. Try for Free."
@@ -94,16 +94,16 @@ RUN { \
     echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
-ENV ESPOCRM_VERSION 9.2.7
-ENV ESPOCRM_SHA256 0156a51cda2225b8daa4b14fc288cb9c5336beb58c4b31de8d4d38eb8b8a33bd
+ENV ESPOCRM_VERSION 9.3.0
+ENV ESPOCRM_SHA256 021b15a4376e194f12273009ba6cd61f57fec685d6863ce64a3df412acc2f0b9
 
 WORKDIR /var/www/html
 
 RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-9.2.7.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-9.3.0.zip" -o EspoCRM.zip; \
     echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-9.2.7" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-9.3.0" /usr/src/espocrm; \
     rm EspoCRM.zip
 
 COPY ./docker-*.sh  /usr/local/bin/
