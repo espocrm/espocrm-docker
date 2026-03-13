@@ -34,6 +34,7 @@ RUN set -ex; \
     # END: Install php-zmq
     \
     pecl install ev; \
+    pecl install redis; \
     \
     docker-php-ext-configure ldap \
         --with-libdir="lib/$(dpkg-architecture --query DEB_BUILD_MULTIARCH)" \
@@ -58,6 +59,7 @@ RUN set -ex; \
     docker-php-ext-enable \
         zmq \
         ev \
+        redis \
     ; \
     \
 # reset a list of apt-mark
