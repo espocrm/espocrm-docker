@@ -39,7 +39,7 @@ jobs:
       - name: Apache Build
         uses: docker/build-push-action@v6
         with:
-          context: ./apache
+          context: ./latest/apache
           platforms: linux/386,linux/amd64,linux/arm/v5,linux/arm/v7,linux/arm64/v8
           push: true
           labels: ${{ steps.meta.outputs.labels }}
@@ -52,6 +52,10 @@ jobs:
             espocrm/espocrm:${{ steps.get_version.outputs.version }}-apache
             espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-apache
             espocrm/espocrm:${{ steps.get_version.outputs.major }}-apache
+            espocrm/espocrm:apache-trixie
+            espocrm/espocrm:${{ steps.get_version.outputs.version }}-apache-trixie
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-apache-trixie
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}-apache-trixie
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -67,7 +71,7 @@ jobs:
       - name: FPM Build
         uses: docker/build-push-action@v4
         with:
-          context: ./fpm
+          context: ./latest/fpm
           platforms: linux/386,linux/amd64,linux/arm/v5,linux/arm/v7,linux/arm64/v8
           push: true
           labels: ${{ steps.meta.outputs.labels }}
@@ -76,6 +80,10 @@ jobs:
             espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm
             espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-fpm
             espocrm/espocrm:${{ steps.get_version.outputs.major }}-fpm
+            espocrm/espocrm:fpm-trixie
+            espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm-trixie
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-fpm-trixie
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}-fpm-trixie
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -91,7 +99,7 @@ jobs:
       - name: FPM-Alpine Build
         uses: docker/build-push-action@v4
         with:
-          context: ./fpm-alpine
+          context: ./latest/fpm-alpine
           platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8
           push: true
           labels: ${{ steps.meta.outputs.labels }}
@@ -100,6 +108,10 @@ jobs:
             espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm-alpine
             espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-fpm-alpine
             espocrm/espocrm:${{ steps.get_version.outputs.major }}-fpm-alpine
+            espocrm/espocrm:fpm-alpine3.23
+            espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm-alpine3.23
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-fpm-alpine3.23
+            espocrm/espocrm:${{ steps.get_version.outputs.major }}-fpm-alpine3.23
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
