@@ -1,9 +1,13 @@
 #!/bin/bash
 
-set -euo pipefail
+set -Eeuo pipefail
+
+defaultVariant="apache"
 
 self="$(basename "$BASH_SOURCE")"
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
+
+[ -f versions.json ] # run "versions.sh" first
 
 # get the most recent commit which modified any of "$@"
 fileCommit() {
@@ -34,58 +38,54 @@ join() {
 	echo "${out#$sep}"
 }
 
-generateCommit="$(fileCommit "$@")"
-
 cat <<-EOH
-# this file is generated via https://github.com/espocrm/espocrm-docker/blob/$generateCommit/$self
+# this file is generated via https://github.com/espocrm/espocrm-docker/blob/$(fileCommit "$self")/$self
 
 Maintainers: Taras Machyshyn <docker@espocrm.com> (@tmachyshyn)
 GitRepo: https://github.com/espocrm/espocrm-docker.git
 EOH
 
-defaultVariant="apache"
+versions="$(jq -r 'keys | map(@sh) | join(" ")' versions.json)"
+eval "set -- $versions"
 
-declare -a variantList=(
-	'apache'
-	'fpm'
-	'fpm-alpine'
-)
+for version; do
+	export version
 
-declare -A architectures=(
-	[apache]="amd64, i386, arm32v5, arm32v7, arm64v8"
-	[fpm]="amd64, i386, arm32v5, arm32v7, arm64v8"
-	[fpm-alpine]="amd64, i386, arm32v6, arm32v7, arm64v8"
-)
+	variantList="$(jq -r '.[env.version].variantList | map(@sh) | join(" ")' versions.json)"
+	eval "variantList=( $variantList )"
 
-for variant in "${variantList[@]}"
-do
-    dir="$variant"
+	fullVersion="$(jq -r '.[env.version].version' versions.json)"
 
-    if [ ! -f "$dir/Dockerfile" ]; then
-        continue
-    fi
+	for variant in "${variantList[@]}"; do
+		export variant
 
-    commit=$(dirCommit "$dir")
-    version="$(git show "$commit":"$dir/Dockerfile" | grep 'ESPOCRM_VERSION' | awk '{print $3}')"
+		dir="$version/$variant"
+		[ -f "$dir/Dockerfile" ] || continue
 
-	declare -a tags=("$variant" "$version-$variant")
+		distribution="$(jq -r '.[env.version].distributions[env.variant]' versions.json)"
 
-	tags+=("$(expr "$version" : '\([0-9]*.[0-9]*\)')-$variant")
-	tags+=("$(expr "$version" : '\([0-9]*\)')-$variant")
+		declare -a tags=("$variant" "$distribution" "$fullVersion-$variant" "$fullVersion-$distribution")
 
-	if [ "$defaultVariant" == "$variant" ]; then
-	     tags+=("latest")
-	     tags+=("$version")
-	     tags+=("$(expr "$version" : '\([0-9]*.[0-9]*\)')")
-	     tags+=("$(expr "$version" : '\([0-9]*\)')")
-	fi
+		tags+=("$(expr "$fullVersion" : '\([0-9]*.[0-9]*\)')-$variant")
+		tags+=("$(expr "$fullVersion" : '\([0-9]*.[0-9]*\)')-$distribution")
 
-	echo
-	cat <<-EOE
-		Tags: $(join ', ' "${tags[@]}")
-		Architectures: ${architectures[$variant]}
-		GitCommit: $generateCommit
-		Directory: $dir
-	EOE
+		tags+=("$(expr "$fullVersion" : '\([0-9]*\)')-$variant")
+		tags+=("$(expr "$fullVersion" : '\([0-9]*\)')-$distribution")
 
+		if [ "$defaultVariant" == "$variant" ]; then
+			tags+=("latest")
+			tags+=("$fullVersion")
+			tags+=("$(expr "$fullVersion" : '\([0-9]*.[0-9]*\)')")
+			tags+=("$(expr "$fullVersion" : '\([0-9]*\)')")
+		fi
+
+		echo
+		cat <<-EOE
+			Tags: $(join ', ' "${tags[@]}")
+			Architectures: $(jq -r '.[env.version].architectures[env.variant]' versions.json)
+			GitCommit: $(dirCommit "$dir")
+			Directory: $dir
+		EOE
+
+	done
 done
