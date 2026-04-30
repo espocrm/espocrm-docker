@@ -1,10 +1,16 @@
-FROM php:8.4-fpm-alpine
+#
+# NOTE: THIS DOCKERFILE IS GENERATED VIA "apply-templates.sh"
+#
+# PLEASE DO NOT EDIT IT DIRECTLY.
+#
+
+FROM php:8.4-fpm-alpine3.23
 
 LABEL org.opencontainers.image.source=https://github.com/espocrm/espocrm
-LABEL org.opencontainers.image.description="EspoCRM is an Open Source CRM. Try for Free."
+LABEL org.opencontainers.image.description="EspoCRM is a free and open-source CRM platform."
 
 # Install php libs
-RUN set -ex; \
+RUN set -eux; \
     apk add --no-cache --virtual .build-deps \
         postgresql-dev \
         libzip-dev \
@@ -69,16 +75,16 @@ RUN { \
     echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
-ENV ESPOCRM_VERSION 9.3.4
-ENV ESPOCRM_SHA256 5bd21b957648dfcbccc6f4847ac00f81f32723233c18ce50ce82979555eb196a
+ENV ESPOCRM_VERSION 9.3.5
+ENV ESPOCRM_SHA256 4a1490ae911a23dcb77e1fd0c66ca5bafded09651cafa47443f4ff9414f4d264
 
 WORKDIR /var/www/html
 
-RUN set -ex; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-9.3.4.zip" -o EspoCRM.zip; \
+RUN set -eux; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-9.3.5.zip" -o EspoCRM.zip; \
     echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-9.3.4" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-${ESPOCRM_VERSION}" /usr/src/espocrm; \
     rm EspoCRM.zip
 
 COPY ./docker-*.sh  /usr/local/bin/
