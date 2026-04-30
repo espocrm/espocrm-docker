@@ -1,9 +1,9 @@
-FROM php:8.4-%%VARIANT%%
+FROM php:{{ env.phpVersion }}-{{ env.distribution }}
 
 LABEL org.opencontainers.image.source=https://github.com/espocrm/espocrm
-LABEL org.opencontainers.image.description="EspoCRM is an Open Source CRM. Try for Free."
+LABEL org.opencontainers.image.description="EspoCRM is a free and open-source CRM platform."
 
-RUN set -ex; \
+RUN set -eux; \
     \
     aptMarkList="$(apt-mark showmanual)"; \
     \
@@ -93,21 +93,26 @@ RUN { \
     echo 'upload_max_filesize=30M'; \
     echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
-%%ADDITIONS%%
-ENV ESPOCRM_VERSION %%ESPOCRM_VERSION%%
-ENV ESPOCRM_SHA256 %%ESPOCRM_SHA256%%
+{{ if env.variant == "apache" then ( -}}
+
+RUN set -eux; \
+	a2enmod rewrite
+{{ ) else "" end -}}
+
+ENV ESPOCRM_VERSION {{ .version }}
+ENV ESPOCRM_SHA256 {{ .sha256 }}
 
 WORKDIR /var/www/html
 
-RUN set -ex; \
-    curl -fSL "%%ESPOCRM_DOWNLOAD_URL%%" -o EspoCRM.zip; \
+RUN set -eux; \
+    curl -fSL "{{ .downloadUrl }}" -o EspoCRM.zip; \
     echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-%%ESPOCRM_VERSION%%" /usr/src/espocrm; \
+    mv "/usr/src/EspoCRM-${ESPOCRM_VERSION}" /usr/src/espocrm; \
     rm EspoCRM.zip
 
 COPY ./docker-*.sh  /usr/local/bin/
 
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 
-CMD ["%%CMD%%"]
+CMD {{ [ if env.variant == "apache" then "apache2-foreground" else "php-fpm" end ] | @json }}
