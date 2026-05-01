@@ -10,7 +10,7 @@ compareVersion() {
     local version2="$2"
     local operator="$3"
 
-    echo $(php -r "echo version_compare('$version1', '$version2', '$operator');")
+    php -r 'echo version_compare($argv[1], $argv[2], $argv[3]);' "$version1" "$version2" "$operator"
 }
 
 join() {
@@ -23,11 +23,13 @@ getConfigParamFromFile() {
     local name="$1"
 
     php -r "
+        \$name = \$argv[1];
+
         if (file_exists('/var/www/html/data/state.php')) {
             \$config=include('/var/www/html/data/state.php');
 
-            if (array_key_exists('$name', \$config)) {
-                echo \$config['$name'];
+            if (array_key_exists(\$name, \$config)) {
+                echo \$config[\$name];
                 exit;
             }
         }
@@ -35,8 +37,8 @@ getConfigParamFromFile() {
         if (file_exists('/var/www/html/data/config-internal.php')) {
             \$config=include('/var/www/html/data/config-internal.php');
 
-            if (array_key_exists('$name', \$config)) {
-                echo \$config['$name'];
+            if (array_key_exists(\$name, \$config)) {
+                echo \$config[\$name];
                 exit;
             }
         }
@@ -44,25 +46,27 @@ getConfigParamFromFile() {
         if (file_exists('/var/www/html/data/config.php')) {
             \$config=include('/var/www/html/data/config.php');
 
-            if (array_key_exists('$name', \$config)) {
-                echo \$config['$name'];
+            if (array_key_exists(\$name, \$config)) {
+                echo \$config[\$name];
                 exit;
             }
         }
-    "
+    " "$name"
 }
 
 getConfigParam() {
     local name="$1"
 
     php -r "
+        \$name = \$argv[1];
+
         require_once('/var/www/html/bootstrap.php');
 
         \$app = new \Espo\Core\Application();
         \$config = \$app->getContainer()->get('config');
 
-        echo \$config->get('$name');
-    "
+        echo \$config->get(\$name);
+    " "$name"
 }
 
 # Bool: saveConfigParam "jobRunInParallel" "true"
@@ -72,21 +76,50 @@ saveConfigParam() {
     local value="$2"
 
     php -r "
+        \$name = \$argv[1];
+        \$rawValue = \$argv[2];
+
+        \$normalizeValue = static function (string \$value) {
+            if (\$value === 'null') {
+                return null;
+            }
+
+            if (\$value === 'true') {
+                return true;
+            }
+
+            if (\$value === 'false') {
+                return false;
+            }
+
+            if (preg_match('/^-?(?:0|[1-9][0-9]*)$/', \$value)) {
+                return (int) \$value;
+            }
+
+            if (preg_match('/^-?(?:[0-9]*\\.[0-9]+|[0-9]+\\.[0-9]*)$/', \$value)) {
+                return (float) \$value;
+            }
+
+            return \$value;
+        };
+
+        \$value = \$normalizeValue(\$rawValue);
+
         require_once('/var/www/html/bootstrap.php');
 
         \$app = new \Espo\Core\Application();
         \$config = \$app->getContainer()->get('config');
 
-        if (\$config->get('$name') === $value) {
+        if (\$config->get(\$name) === \$value) {
             return;
         }
 
         \$injectableFactory = \$app->getContainer()->get('injectableFactory');
         \$configWriter = \$injectableFactory->create('\\Espo\\Core\\Utils\\Config\\ConfigWriter');
 
-        \$configWriter->set('$name', $value);
+        \$configWriter->set(\$name, \$value);
         \$configWriter->save();
-    "
+    " "$name" "$value"
 }
 
 saveConfigArrayParam() {
@@ -95,29 +128,59 @@ saveConfigArrayParam() {
     local value="$3"
 
     php -r "
+        \$key1 = \$argv[1];
+        \$key2 = \$argv[2];
+        \$rawValue = \$argv[3];
+
+        \$normalizeValue = static function (string \$value) {
+            if (\$value === 'null') {
+                return null;
+            }
+
+            if (\$value === 'true') {
+                return true;
+            }
+
+            if (\$value === 'false') {
+                return false;
+            }
+
+            if (preg_match('/^-?(?:0|[1-9][0-9]*)$/', \$value)) {
+                return (int) \$value;
+            }
+
+            if (preg_match('/^-?(?:[0-9]*\\.[0-9]+|[0-9]+\\.[0-9]*)$/', \$value)) {
+                return (float) \$value;
+            }
+
+            return \$value;
+        };
+
+        \$value = \$normalizeValue(\$rawValue);
+
         require_once('/var/www/html/bootstrap.php');
 
         \$app = new \Espo\Core\Application();
         \$config = \$app->getContainer()->get('config');
 
-        \$arrayValue = \$config->get('$key1') ?? [];
+        \$arrayValue = \$config->get(\$key1) ?? [];
 
         if (!is_array(\$arrayValue)) {
             return;
         }
 
-        if (array_key_exists('$key2', \$arrayValue) && \$arrayValue['$key2'] === $value) {
+        if (array_key_exists(\$key2, \$arrayValue) && \$arrayValue[\$key2] === \$value) {
             return;
         }
 
         \$injectableFactory = \$app->getContainer()->get('injectableFactory');
         \$configWriter = \$injectableFactory->create('\\Espo\\Core\\Utils\\Config\\ConfigWriter');
 
-        \$arrayValue['$key2'] = $value;
+        \$arrayValue[\$key2] = \$value;
 
-        \$configWriter->set('$key1', \$arrayValue);
+        \$configWriter->set(\$key1, \$arrayValue);
         \$configWriter->save();
-    "
+    " "$key1" "$key2" "$value"
 }
 
 checkInstanceReady() {
@@ -196,50 +259,15 @@ applyConfigEnvironments() {
     done
 }
 
-isValueQuoted() {
-    local value="$1"
-
-    php -r "
-        echo isQuote('$value');
-
-        function isQuote (\$value) {
-            \$value = trim(\$value);
-
-            if (\$value === '0') {
-                return false;
-            }
-
-            if (empty(\$value)) {
-                return true;
-            }
-
-            if (filter_var(\$value, FILTER_VALIDATE_IP)) {
-                return true;
-            }
-
-            if (!preg_match('/[^0-9.]+/', \$value)) {
-                return false;
-            }
-
-            if (in_array(\$value, ['null', '1'], true)) {
-                return false;
-            }
-
-            if (in_array(\$value, ['true', 'false'])) {
-                return false;
-            }
-
-            return true;
-        }
-    "
-}
-
 normalizeConfigParamName() {
     local value="$1"
     local prefix=${2:-"$configPrefix"}
 
     php -r "
-        \$value = str_ireplace('$prefix', '', '$value');
+        \$value = \$argv[1];
+        \$prefix = \$argv[2];
+
+        \$value = str_ireplace(\$prefix, '', \$value);
         \$value = strtolower(\$value);
 
         \$value = preg_replace_callback(
@@ -251,20 +279,23 @@ normalizeConfigParamName() {
         );
 
         echo \$value;
-    "
+    " "$value" "$prefix"
 }
 
 normalizeConfigParamValue() {
-    local value=${1//\'/\\\'}
+    local value="$1"
 
-    local isValueQuoted=$(isValueQuoted "$value")
+    php -r "
+        \$value = \$argv[1];
+        \$trimmed = trim(\$value);
 
-    if [ -n "$isValueQuoted" ] && [ "$isValueQuoted" = 1 ]; then
-        echo "'$value'"
-        return
-    fi
+        if (preg_match('/^\'(.*)\'$/s', \$trimmed, \$matches)) {
+            echo str_replace('\\\\\'', '\'', \$matches[1]);
+            return;
+        }
 
-    echo "$value"
+        echo \$value;
+    " "$value"
 }
 
 isConfigArrayParam() {
