@@ -68,8 +68,8 @@ RUN { \
     echo 'memory_limit=256M'; \
     echo 'max_execution_time=180'; \
     echo 'max_input_time=180'; \
-    echo 'post_max_size=30M'; \
-    echo 'upload_max_filesize=30M'; \
+    echo 'post_max_size=50M'; \
+    echo 'upload_max_filesize=50M'; \
     echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
