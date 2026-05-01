@@ -32,28 +32,28 @@ for version; do
 	rm -rf "$version/"
 
 	phpVersion="$(jq -r '.[env.version].phpVersion' versions.json)"
-    export phpVersion
+	export phpVersion
 
 	variantList="$(jq -r '.[env.version].variantList | map(@sh) | join(" ")' versions.json)"
 	eval "variantList=( $variantList )"
 
-    for variant in "${variantList[@]}"; do
-        export variant
+	for variant in "${variantList[@]}"; do
+		export variant
 
-        dir="$version/$variant"
-        mkdir -p "$dir"
+		dir="$version/$variant"
+		mkdir -p "$dir"
 
-        distribution="$(jq -r '.[env.version].distributions[env.variant]' versions.json)"
-        export distribution
+		distribution="$(jq -r '.[env.version].distributions[env.variant]' versions.json)"
+		export distribution
 
-        template="$(jq -r '.[env.version].templates[env.variant]' versions.json)"
+		template="$(jq -r '.[env.version].templates[env.variant]' versions.json)"
 
-        {
-            generated_warning
-            gawk -f "$jqt" Dockerfile-$template.template
-        } > "$dir/Dockerfile"
+		{
+			generated_warning
+			gawk -f "$jqt" Dockerfile-$template.template
+		} > "$dir/Dockerfile"
 
-        cp docker-*.sh "$dir"/
-        sed -i '/# entrypoint-utils.sh/r entrypoint-utils.sh' "$dir"/docker-*.sh
-    done
+		cp docker-*.sh "$dir"/
+		sed -i '/# entrypoint-utils.sh/r entrypoint-utils.sh' "$dir"/docker-*.sh
+	done
 done
