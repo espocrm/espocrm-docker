@@ -184,14 +184,16 @@ saveConfigArrayParam() {
 }
 
 checkInstanceReady() {
-    local isInstalled=$(getConfigParamFromFile "isInstalled")
+    local isInstalled
+    isInstalled=$(getConfigParamFromFile "isInstalled")
 
     if [ -z "$isInstalled" ] || [ "$isInstalled" != 1 ]; then
         echo >&2 "Instance is not ready: installation in progress"
         exit 0
     fi
 
-    local maintenanceMode=$(getConfigParamFromFile "maintenanceMode")
+    local maintenanceMode
+    maintenanceMode=$(getConfigParamFromFile "maintenanceMode")
 
     if [ -n "$maintenanceMode" ] && [ "$maintenanceMode" = 1 ]; then
         echo >&2 "Instance is not ready: waiting for maintenance mode to be disabled"
@@ -317,8 +319,11 @@ saveConfigValue() {
     local envName="$1"
     local envValue="$2"
 
-    local key=$(normalizeConfigParamName "$envName")
-    local value=$(normalizeConfigParamValue "$envValue")
+    local key
+    key=$(normalizeConfigParamName "$envName")
+
+    local value
+    value=$(normalizeConfigParamValue "$envValue")
 
     saveConfigParam "$key" "$value"
 }
@@ -334,12 +339,15 @@ saveConfigArrayValue() {
         fi
 
         local key1="$i"
-        local key2=$(normalizeConfigParamName "$envName" "${configPrefixArrayList[$i]}")
+
+        local key2
+        key2=$(normalizeConfigParamName "$envName" "${configPrefixArrayList[$i]}")
 
         break
     done
 
-    local value=$(normalizeConfigParamValue "$envValue")
+    local value
+    value=$(normalizeConfigParamValue "$envValue")
 
     saveConfigArrayParam "$key1" "$key2" "$value"
 }

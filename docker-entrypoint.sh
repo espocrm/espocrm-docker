@@ -7,11 +7,15 @@ set -euo pipefail
 
 start() {
     if [ -f "/var/www/html/data/config.php" ]; then
-        local isInstalled=$(getConfigParamFromFile "isInstalled")
+        local isInstalled
+        isInstalled=$(getConfigParamFromFile "isInstalled")
 
         if [ -n "$isInstalled" ] && [ "$isInstalled" = 1 ]; then
-            local installedVersion=$(getConfigParamFromFile "version")
-            local isVersionGreater=$(compareVersion "$ESPOCRM_VERSION" "$installedVersion" ">")
+            local installedVersion
+            installedVersion=$(getConfigParamFromFile "version")
+
+            local isVersionGreater
+            isVersionGreater=$(compareVersion "$ESPOCRM_VERSION" "$installedVersion" ">")
 
             if [ -n "$isVersionGreater" ]; then
                 actionUpgrade
@@ -82,8 +86,11 @@ runUpgradeProcess() {
         return 1
     fi
 
-    local installedVersion=$(getConfigParamFromFile "version")
-    local isVersionEqual=$(compareVersion "$installedVersion" "$ESPOCRM_VERSION" ">=")
+    local installedVersion
+    installedVersion=$(getConfigParamFromFile "version")
+
+    local isVersionEqual
+    isVersionEqual=$(compareVersion "$installedVersion" "$ESPOCRM_VERSION" ">=")
 
     if [ -n "$isVersionEqual" ]; then
         echo >&2 "info: Upgrading is finished. EspoCRM version is $installedVersion."
@@ -100,7 +107,8 @@ runUpgradeProcess() {
 }
 
 runUpgradeStep() {
-    local result=$(php command.php upgrade -y --toVersion="$ESPOCRM_VERSION")
+    local result
+    result=$(php command.php upgrade -y --toVersion="$ESPOCRM_VERSION")
 
     if [[ "$result" == *"Error:"* ]]; then
         echo >&2 "error: Upgrade error, more details:"
@@ -171,11 +179,13 @@ runInstallationStep() {
     local actionName="$1"
     local returnResult=${3-false}
 
+    local result
+
     if [ -n "${2-}" ]; then
         local data="$2"
-        local result=$(php install/cli.php -a "$actionName" -d "$data")
+        result=$(php install/cli.php -a "$actionName" -d "$data")
     else
-        local result=$(php install/cli.php -a "$actionName")
+        result=$(php install/cli.php -a "$actionName")
     fi
 
     if [ "$returnResult" = true ]; then
@@ -191,8 +201,11 @@ runInstallationStep() {
 }
 
 setPermissions() {
-    local owner="$(id -u)"
-    local group="$(id -g)"
+    local owner
+    owner=$(id -u)
+
+    local group
+    group=$(id -g)
 
     find /var/www/html -type d -exec chmod 755 {} +
     find /var/www/html -type f -exec chmod 644 {} +
