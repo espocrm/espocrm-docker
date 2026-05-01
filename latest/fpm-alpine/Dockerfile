@@ -9,9 +9,16 @@ FROM php:8.4-fpm-alpine3.23
 LABEL org.opencontainers.image.source=https://github.com/espocrm/espocrm
 LABEL org.opencontainers.image.description="EspoCRM is a free and open-source CRM platform."
 
-# Install php libs
+# Persistent dependencies
+RUN set -eux; \
+	apk add --no-cache \
+		bash \
+	;
+
+# Install PHP libs
 RUN set -eux; \
     apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
         postgresql-dev \
         libzip-dev \
         libpng-dev \
@@ -22,8 +29,6 @@ RUN set -eux; \
         openssl-dev \
         libzmq \
         zeromq-dev \
-        bash \
-        $PHPIZE_DEPS \
     ; \
     \
     # Install php-zmq
@@ -62,7 +67,18 @@ RUN set -eux; \
     docker-php-ext-enable \
         zmq \
         ev \
-        redis
+        redis \
+    ; \
+    rm -r /tmp/pear; \
+    \
+    runDeps="$( \
+		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local \
+			| tr ',' '\n' \
+			| sort -u \
+			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+	)"; \
+    apk add --no-network --virtual .espocrm-phpexts-rundeps $runDeps; \
+	apk del --no-network .build-deps
 
 # php.ini
 RUN { \
@@ -74,8 +90,8 @@ RUN { \
     echo 'memory_limit=256M'; \
     echo 'max_execution_time=180'; \
     echo 'max_input_time=180'; \
-    echo 'post_max_size=30M'; \
-    echo 'upload_max_filesize=30M'; \
+    echo 'post_max_size=50M'; \
+    echo 'upload_max_filesize=50M'; \
     echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 

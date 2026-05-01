@@ -9,6 +9,16 @@ FROM php:8.4-fpm-trixie
 LABEL org.opencontainers.image.source=https://github.com/espocrm/espocrm
 LABEL org.opencontainers.image.description="EspoCRM is a free and open-source CRM platform."
 
+# Persistent dependencies
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+        unzip \
+        libldap-common \
+	; \
+	rm -rf /var/lib/apt/lists/*
+
+# Install PHP libs
 RUN set -eux; \
     \
     aptMarkList="$(apt-mark showmanual)"; \
@@ -70,24 +80,21 @@ RUN set -eux; \
         redis \
     ; \
     \
+    rm -r /tmp/pear; \
+    \
 # reset a list of apt-mark
     apt-mark auto '.*' > /dev/null; \
-    apt-mark manual $aptMarkList; \
-    ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-        | awk '/=>/ { print $3 }' \
-        | sort -u \
-        | xargs -r realpath | xargs -r dpkg-query --search \
-        | cut -d: -f1 \
-        | sort -u \
-        | xargs -rt apt-mark manual; \
-    \
-    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-    # Install required libs
-    apt-get install -y --no-install-recommends \
-        unzip \
-        libldap-common \
-    ; \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+	apt-mark manual $aptMarkList; \
+	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
+		| sort -u \
+		| xargs -r dpkg-query -S \
+		| cut -d: -f1 \
+		| sort -u \
+		| xargs -rt apt-mark manual; \
+	\
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	rm -rf /var/lib/apt/lists/*
 
 # php.ini
 RUN { \
@@ -99,8 +106,8 @@ RUN { \
     echo 'memory_limit=256M'; \
     echo 'max_execution_time=180'; \
     echo 'max_input_time=180'; \
-    echo 'post_max_size=30M'; \
-    echo 'upload_max_filesize=30M'; \
+    echo 'post_max_size=50M'; \
+    echo 'upload_max_filesize=50M'; \
     echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
