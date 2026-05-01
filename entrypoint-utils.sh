@@ -151,23 +151,19 @@ isDatabaseReady() {
 
         try {
             \$helper->createPDO();
-        }
-        catch (Exception \$e) {
-            echo false;
-            exit;
+        } catch (\Throwable \$e) {
+            exit(1);
         }
 
-        echo true;
+        exit(0);
     "
 }
 
 verifyDatabaseReady() {
     for i in {1..40}
     do
-        isReady=$(isDatabaseReady 2>&1)
-
-        if [ -n "$isReady" ]; then
-            return 0 #true
+        if isDatabaseReady; then
+            return 0
         fi
 
         echo >&2 "Waiting for database connection (attempt $i/40)..."
@@ -175,7 +171,7 @@ verifyDatabaseReady() {
     done
 
     echo >&2 "error: Database connection failed"
-    return 1 #false
+    return 1
 }
 
 applyConfigEnvironments() {
