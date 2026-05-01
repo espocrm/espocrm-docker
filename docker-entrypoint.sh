@@ -60,13 +60,18 @@ actionUpgrade() {
     MAX_UPGRADE_COUNT=20
     UPGRADE_NUMBER=0
 
-    if verifyDatabaseReady ; then
-        runUpgradeProcess
-        setPermissions
-        return
+    if ! verifyDatabaseReady ; then
+        echo >&2 "error: Unable to upgrade the instance. Database is not ready."
+        return 1
     fi
 
-    echo >&2 "error: Unable to upgrade the instance. Starting the current version."
+    if ! runUpgradeProcess; then
+        echo >&2 "error: Upgrade process failed. Starting the actual version."
+        return 0 # the container will be started, but with the actual version
+    fi
+
+    setPermissions
+    return 0
 }
 
 runUpgradeProcess() {
@@ -74,7 +79,7 @@ runUpgradeProcess() {
 
     if [ $UPGRADE_NUMBER -gt $MAX_UPGRADE_COUNT ];then
         echo >&2 "error: The MAX_UPGRADE_COUNT exceed. The upgrading process has been stopped."
-        return
+        return 1
     fi
 
     local installedVersion=$(getConfigParamFromFile "version")
@@ -82,13 +87,13 @@ runUpgradeProcess() {
 
     if [ -n "$isVersionEqual" ]; then
         echo >&2 "info: Upgrading is finished. EspoCRM version is $installedVersion."
-        return
+        return 0
     fi
 
     echo >&2 "info: Start upgrading from version $installedVersion."
 
     if ! runUpgradeStep ; then
-        return
+        return 1
     fi
 
     runUpgradeProcess
