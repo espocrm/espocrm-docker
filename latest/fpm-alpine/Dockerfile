@@ -37,7 +37,10 @@ RUN set -eux; \
         cd .. && rm -rf php-zmq*; \
     # END: Install php-zmq
     \
-    pecl install ev; \
+    pecl install \
+        ev \
+        redis \
+    ; \
     \
     docker-php-ext-configure gd \
         --with-freetype \
@@ -58,7 +61,8 @@ RUN set -eux; \
     ; \
     docker-php-ext-enable \
         zmq \
-        ev
+        ev \
+        redis
 
 # php.ini
 RUN { \
