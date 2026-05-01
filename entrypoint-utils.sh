@@ -177,8 +177,6 @@ verifyDatabaseReady() {
 applyConfigEnvironments() {
     local envName
     local envValue
-    local configParamName
-    local configParamValue
 
     compgen -v | while read -r envName; do
 

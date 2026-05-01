@@ -190,18 +190,6 @@ runInstallationStep() {
     fi
 }
 
-isCustomPath() {
-    local path="$1"
-
-    for customDir in "${CUSTOM_RESOURCE_LIST[@]}"; do
-        if [[ "$path" == "$customDir"* ]]; then
-            return 0 # true
-        fi
-    done
-
-    return 1 # false
-}
-
 setPermissions() {
     local owner="$(id -u)"
     local group="$(id -g)"
