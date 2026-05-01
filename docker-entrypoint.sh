@@ -112,6 +112,11 @@ runUpgradeStep() {
     return 0 #true
 }
 
+urlEncode() {
+    local value="${1-}"
+    php -r 'echo rawurlencode($argv[1]);' "$value"
+}
+
 installEspocrm() {
     echo >&2 "info: Start EspoCRM installation"
 
@@ -124,11 +129,11 @@ installEspocrm() {
         setEnvValue "${varName}" "${!varName-}"
 
         if [ -n "${!varName-}" ]; then
-            preferences+=("${optionName}=${!varName}")
+            preferences+=("${optionName}=$(urlEncode "${!varName}")")
         fi
     done
 
-    runInstallationStep "step1" "user-lang=${ESPOCRM_LANGUAGE}"
+    runInstallationStep "step1" "user-lang=$(urlEncode "$ESPOCRM_LANGUAGE")"
 
     local databaseHost="${ESPOCRM_DATABASE_HOST}"
 
@@ -138,7 +143,7 @@ installEspocrm() {
 
     for i in {1..20}
     do
-        settingsTestResult=$(runInstallationStep "settingsTest" "dbPlatform=${ESPOCRM_DATABASE_PLATFORM}&hostName=${databaseHost}&dbName=${ESPOCRM_DATABASE_NAME}&dbUserName=${ESPOCRM_DATABASE_USER}&dbUserPass=${ESPOCRM_DATABASE_PASSWORD}" true 2>&1)
+        settingsTestResult=$(runInstallationStep "settingsTest" "dbPlatform=$(urlEncode "$ESPOCRM_DATABASE_PLATFORM")&hostName=$(urlEncode "$databaseHost")&dbName=$(urlEncode "$ESPOCRM_DATABASE_NAME")&dbUserName=$(urlEncode "$ESPOCRM_DATABASE_USER")&dbUserPass=$(urlEncode "$ESPOCRM_DATABASE_PASSWORD")" true 2>&1)
 
         if [[ ! "$settingsTestResult" == *"Error:"* ]]; then
             break
@@ -152,11 +157,11 @@ installEspocrm() {
         return
     fi
 
-    runInstallationStep "setupConfirmation" "db-platform=${ESPOCRM_DATABASE_PLATFORM}&host-name=${databaseHost}&db-name=${ESPOCRM_DATABASE_NAME}&db-user-name=${ESPOCRM_DATABASE_USER}&db-user-password=${ESPOCRM_DATABASE_PASSWORD}"
+    runInstallationStep "setupConfirmation" "db-platform=$(urlEncode "$ESPOCRM_DATABASE_PLATFORM")&host-name=$(urlEncode "$databaseHost")&db-name=$(urlEncode "$ESPOCRM_DATABASE_NAME")&db-user-name=$(urlEncode "$ESPOCRM_DATABASE_USER")&db-user-password=$(urlEncode "$ESPOCRM_DATABASE_PASSWORD")"
     runInstallationStep "checkPermission"
-    runInstallationStep "saveSettings" "site-url=${ESPOCRM_SITE_URL}&default-permissions-user=www-data&default-permissions-group=www-data"
+    runInstallationStep "saveSettings" "site-url=$(urlEncode "$ESPOCRM_SITE_URL")&default-permissions-user=www-data&default-permissions-group=www-data"
     runInstallationStep "buildDatabase"
-    runInstallationStep "createUser" "user-name=${ESPOCRM_ADMIN_USERNAME}&user-pass=${ESPOCRM_ADMIN_PASSWORD}"
+    runInstallationStep "createUser" "user-name=$(urlEncode "$ESPOCRM_ADMIN_USERNAME")&user-pass=$(urlEncode "$ESPOCRM_ADMIN_PASSWORD")"
     runInstallationStep "savePreferences" "$(join '&' "${preferences[@]}")"
     runInstallationStep "finish"
 
