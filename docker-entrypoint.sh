@@ -212,6 +212,33 @@ setEnvironments() {
     done
 }
 
+warnInsecureCredentials() {
+    declare -a warningItems=()
+
+    if [ "$ESPOCRM_ADMIN_PASSWORD" = "${DEFAULTS['ESPOCRM_ADMIN_PASSWORD']}" ]; then
+        warningItems+=("ESPOCRM_ADMIN_PASSWORD uses the built-in default value.")
+    fi
+
+    if [ "$ESPOCRM_DATABASE_PASSWORD" = "${DEFAULTS['ESPOCRM_DATABASE_PASSWORD']}" ]; then
+        warningItems+=("ESPOCRM_DATABASE_PASSWORD uses the built-in default value.")
+    fi
+
+    if [ ${#warningItems[@]} -eq 0 ]; then
+        return
+    fi
+
+    echo >&2 '****************************************************'
+    echo >&2 'warning: Insecure default EspoCRM credentials detected.'
+
+    for warningItem in "${warningItems[@]}"
+    do
+        echo >&2 "warning: $warningItem"
+    done
+
+    echo >&2 'warning: Set strong environment variable values before using this instance in production.'
+    echo >&2 '****************************************************'
+}
+
 # ------------------------- START -------------------------------------
 # Global variables
 SOURCE_FILES="/usr/src/espocrm"
@@ -248,6 +275,7 @@ declare -A OPTIONAL_PARAMS=(
 )
 
 setEnvironments
+warnInsecureCredentials
 
 start
 
