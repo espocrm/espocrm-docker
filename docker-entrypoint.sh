@@ -112,11 +112,6 @@ runUpgradeStep() {
     return 0 #true
 }
 
-urlEncode() {
-    local value="${1-}"
-    php -r 'echo rawurlencode($argv[1]);' "$value"
-}
-
 installEspocrm() {
     echo >&2 "info: Start EspoCRM installation"
 

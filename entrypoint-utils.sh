@@ -332,3 +332,8 @@ setEnvValue() {
     export "$var"="$val"
     unset "$fileVar"
 }
+
+urlEncode() {
+    local value="${1-}"
+    php -r 'echo rawurlencode($argv[1]);' "$value"
+}
