@@ -385,4 +385,4 @@ checkInstanceReady
 
 applyConfigEnvironments
 
-/usr/local/bin/php /var/www/html/daemon.php
+exec /usr/local/bin/php /var/www/html/daemon.php

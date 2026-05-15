@@ -9,4 +9,4 @@ checkInstanceReady
 
 applyConfigEnvironments
 
-/usr/local/bin/php /var/www/html/websocket.php
+exec /usr/local/bin/php /var/www/html/websocket.php
