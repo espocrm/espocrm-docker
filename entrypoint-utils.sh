@@ -206,22 +206,10 @@ checkInstanceReady() {
 }
 
 isDatabaseReady() {
-    php -r "
-        require_once('/var/www/html/bootstrap.php');
+    local result
+    result=$(php /var/www/html/bin/command db:check 2>/dev/null)
 
-        \$app = new \Espo\Core\Application();
-
-        \$injectableFactory = \$app->getContainer()->get('injectableFactory');
-        \$helper = \$injectableFactory->create('\\Espo\\Core\\Utils\\Database\\Helper');
-
-        try {
-            \$helper->createPDO();
-        } catch (\Throwable \$e) {
-            exit(1);
-        }
-
-        exit(0);
-    "
+    [ "$result" = "OK" ]
 }
 
 verifyDatabaseReady() {
