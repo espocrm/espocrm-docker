@@ -6,122 +6,30 @@ set -euo pipefail
 # END: entrypoint-utils.sh
 
 start() {
-    if [ -f "/var/www/html/data/config.php" ]; then
-        local isInstalled
-        isInstalled=$(getConfigParamFromFile "isInstalled")
-
-        if [ -n "$isInstalled" ] && [ "$isInstalled" = 1 ]; then
-            local installedVersion
-            installedVersion=$(getConfigParamFromFile "version")
-
-            local isVersionGreater
-            isVersionGreater=$(compareVersion "$ESPOCRM_VERSION" "$installedVersion" ">")
-
-            if [ -n "$isVersionGreater" ]; then
-                actionUpgrade
-                return
-            fi
-
-            # no need any action
-            return
-        fi
-
-        actionReinstall
+    if [ "$(bin/command config:get isInstalled)" = "true" ]; then
+        actionUpgrade
         return
     fi
 
     actionInstall
 }
 
-actionInstall() {
-    echo >&2 "info: Run \"install\" action."
-
-    if [ ! -d "$SOURCE_FILES" ]; then
-        echo >&2 "error: Source files [$SOURCE_FILES] are not found."
-        exit 1
-    fi
-
-    cp -a "$SOURCE_FILES/." /var/www/html/
-
-    installEspocrm
-}
-
-actionReinstall() {
-    echo >&2 "info: Run \"reinstall\" action."
-
-    if [ -f "/var/www/html/install/config.php" ]; then
-        sed -i "s/'isInstalled' => true/'isInstalled' => false/g" "/var/www/html/install/config.php"
-    fi
-
-    rm -rf /var/www/html/data/cache
-
-    installEspocrm
-}
-
 actionUpgrade() {
     echo >&2 "info: Run \"upgrade\" action."
-
-    MAX_UPGRADE_COUNT=20
-    UPGRADE_NUMBER=0
 
     if ! verifyDatabaseReady ; then
         echo >&2 "error: Unable to upgrade the instance. Database is not ready."
         return 1
     fi
 
-    if ! runUpgradeProcess; then
-        echo >&2 "error: Upgrade process failed. Starting the actual version."
-        return 0 # the container will be started, but with the actual version
-    fi
-
+    bin/command migrate
     setPermissions
-    return 0
 }
 
-runUpgradeProcess() {
-    UPGRADE_NUMBER=$((UPGRADE_NUMBER+1))
+actionInstall() {
+    echo >&2 "info: Run \"install\" action."
 
-    if [ $UPGRADE_NUMBER -gt $MAX_UPGRADE_COUNT ];then
-        echo >&2 "error: The MAX_UPGRADE_COUNT exceed. The upgrading process has been stopped."
-        return 1
-    fi
-
-    local installedVersion
-    installedVersion=$(getConfigParamFromFile "version")
-
-    local isVersionEqual
-    isVersionEqual=$(compareVersion "$installedVersion" "$ESPOCRM_VERSION" ">=")
-
-    if [ -n "$isVersionEqual" ]; then
-        echo >&2 "info: Upgrading is finished. EspoCRM version is $installedVersion."
-        return 0
-    fi
-
-    echo >&2 "info: Start upgrading from version $installedVersion."
-
-    if ! runUpgradeStep ; then
-        return 1
-    fi
-
-    runUpgradeProcess
-}
-
-runUpgradeStep() {
-    local result
-    result=$(php command.php upgrade -y --toVersion="$ESPOCRM_VERSION")
-
-    if [[ "$result" == *"Error:"* ]]; then
-        echo >&2 "error: Upgrade error, more details:"
-        echo >&2 "$result"
-
-        return 1 #false
-    fi
-
-    return 0 #true
-}
-
-installEspocrm() {
-    echo >&2 "info: Start EspoCRM installation"
+    rm -rf ./data/cache
 
     declare -a preferences=()
 
@@ -172,7 +80,7 @@ installEspocrm() {
 
     setPermissions
 
-    echo >&2 "info: End EspoCRM installation"
+    echo >&2 "info: Installation completed successfully."
 }
 
 runInstallationStep() {
@@ -201,21 +109,7 @@ runInstallationStep() {
 }
 
 setPermissions() {
-    local owner
-    owner=$(id -u)
-
-    local group
-    group=$(id -g)
-
-    find /var/www/html -type d -exec chmod 755 {} +
-    find /var/www/html -type f -exec chmod 644 {} +
-
-    chown -R $owner:$group /var/www/html
-
-    chown www-data:www-data /var/www/html
     chown -R www-data:www-data "${CUSTOM_RESOURCE_LIST[@]}"
-
-    chmod +x bin/command
 }
 
 setEnvironments() {
@@ -254,13 +148,10 @@ warnInsecureCredentials() {
 
 # ------------------------- START -------------------------------------
 # Global variables
-SOURCE_FILES="/usr/src/espocrm"
-
 CUSTOM_RESOURCE_LIST=(
     "/var/www/html/data"
     "/var/www/html/custom"
     "/var/www/html/client/custom"
-    "/var/www/html/install/config.php"
 )
 
 declare -A DEFAULTS=(

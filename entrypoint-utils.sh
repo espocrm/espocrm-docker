@@ -5,68 +5,10 @@ declare -A configPrefixArrayList=(
     [database]="ESPOCRM_CONFIG_DATABASE_"
 )
 
-compareVersion() {
-    local version1="$1"
-    local version2="$2"
-    local operator="$3"
-
-    php -r 'echo version_compare($argv[1], $argv[2], $argv[3]);' "$version1" "$version2" "$operator"
-}
-
 join() {
     local sep="$1"; shift
     local out; printf -v out "${sep//%/%%}%s" "$@"
     echo "${out#$sep}"
-}
-
-getConfigParamFromFile() {
-    local name="$1"
-
-    php -r "
-        \$name = \$argv[1];
-
-        if (file_exists('/var/www/html/data/state.php')) {
-            \$config=include('/var/www/html/data/state.php');
-
-            if (array_key_exists(\$name, \$config)) {
-                echo \$config[\$name];
-                exit;
-            }
-        }
-
-        if (file_exists('/var/www/html/data/config-internal.php')) {
-            \$config=include('/var/www/html/data/config-internal.php');
-
-            if (array_key_exists(\$name, \$config)) {
-                echo \$config[\$name];
-                exit;
-            }
-        }
-
-        if (file_exists('/var/www/html/data/config.php')) {
-            \$config=include('/var/www/html/data/config.php');
-
-            if (array_key_exists(\$name, \$config)) {
-                echo \$config[\$name];
-                exit;
-            }
-        }
-    " "$name"
-}
-
-getConfigParam() {
-    local name="$1"
-
-    php -r "
-        \$name = \$argv[1];
-
-        require_once('/var/www/html/bootstrap.php');
-
-        \$app = new \Espo\Core\Application();
-        \$config = \$app->getContainer()->get('config');
-
-        echo \$config->get(\$name);
-    " "$name"
 }
 
 # Bool: saveConfigParam "jobRunInParallel" "true"
@@ -184,40 +126,12 @@ saveConfigArrayParam() {
 }
 
 checkInstanceReady() {
-    local isInstalled
-    isInstalled=$(getConfigParamFromFile "isInstalled")
-
-    if [ -z "$isInstalled" ] || [ "$isInstalled" != 1 ]; then
-        echo >&2 "Instance is not ready: installation in progress"
-        exit 0
-    fi
-
-    local maintenanceMode
-    maintenanceMode=$(getConfigParamFromFile "maintenanceMode")
-
-    if [ -n "$maintenanceMode" ] && [ "$maintenanceMode" = 1 ]; then
-        echo >&2 "Instance is not ready: waiting for maintenance mode to be disabled"
-        exit 0
-    fi
-
-    if ! verifyDatabaseReady ; then
-        exit 0
-    fi
-}
-
-isDatabaseReady() {
-    local result
-    result=$(php /var/www/html/bin/command db:check 2>/dev/null)
-
-    [ "$result" = "OK" ]
+    bin/command app-check || exit 0
 }
 
 verifyDatabaseReady() {
-    for i in {1..40}
-    do
-        if isDatabaseReady; then
-            return 0
-        fi
+    for i in {1..40}; do
+        [ "$(bin/command db:check 2>/dev/null)" = "OK" ] && return 0
 
         echo >&2 "Waiting for database connection (attempt $i/40)..."
         sleep 3
@@ -232,7 +146,6 @@ applyConfigEnvironments() {
     local envValue
 
     compgen -v | while read -r envName; do
-
         if [[ $envName != "$configPrefix"* ]]; then
             continue
         fi
@@ -297,10 +210,10 @@ isConfigArrayParam() {
             continue
         fi
 
-        return 0 #true
+        return 0 # true
     done
 
-    return 1 #false
+    return 1 # false
 }
 
 saveConfigValue() {
