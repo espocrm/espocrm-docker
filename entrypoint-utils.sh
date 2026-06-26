@@ -1,11 +1,5 @@
 CONFIG_PREFIX="ESPOCRM_CONFIG_"
 
-join() {
-    local sep="$1"; shift
-    local out; printf -v out "${sep//%/%%}%s" "$@"
-    echo "${out#$sep}"
-}
-
 exitIfNotReady() {
     bin/command app-check >/dev/null 2>&1 || {
         echo >&2 "Waiting for the main container to be ready..."
