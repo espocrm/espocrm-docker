@@ -69,6 +69,7 @@ actionInstall() {
     [ -n "${ESPOCRM_THOUSAND_SEPARATOR-}" ] && bin/command config:set "thousandSeparator" "$ESPOCRM_THOUSAND_SEPARATOR"
     [ -n "${ESPOCRM_DECIMAL_MARK-}" ] && bin/command config:set "decimalMark" "$ESPOCRM_DECIMAL_MARK"
 
+    bin/command populate-scheduled-jobs
     bin/command config:set "jobRunInParallel" "true" --type=bool
 
     bin/command app-check || {
@@ -76,7 +77,7 @@ actionInstall() {
         return
     }
 
-    php install/cli.php -a finish
+    bin/command config:set "isInstalled" "true" --type=bool
 
     echo >&2 "info: Installation completed successfully."
 }
