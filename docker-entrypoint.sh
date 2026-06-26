@@ -15,10 +15,10 @@ start() {
 }
 
 actionUpgrade() {
-    echo >&2 "info: Run \"upgrade\" action."
+    echo >&2 "info: Running \"upgrade\" action."
 
     if ! verifyDatabaseReady ; then
-        echo >&2 "error: Unable to upgrade the instance. Database is not ready."
+        echo >&2 "error: Unable to upgrade: database is not ready."
         return 1
     fi
 
@@ -27,85 +27,58 @@ actionUpgrade() {
 }
 
 actionInstall() {
-    echo >&2 "info: Run \"install\" action."
+    echo >&2 "info: Running \"install\" action."
 
     rm -rf ./data/cache
 
-    declare -a preferences=()
+    php install/cli.php -a main
 
-    for optionName in "${!OPTIONAL_PARAMS[@]}"
-    do
-        local varName="${OPTIONAL_PARAMS[$optionName]}"
-
-        setEnvValue "${varName}" "${!varName-}"
-
-        if [ -n "${!varName-}" ]; then
-            preferences+=("${optionName}=$(urlEncode "${!varName}")")
-        fi
-    done
-
-    runInstallationStep "step1" "user-lang=$(urlEncode "$ESPOCRM_LANGUAGE")"
-
-    local databaseHost="${ESPOCRM_DATABASE_HOST}"
-
-    if [ -n "$ESPOCRM_DATABASE_PORT" ]; then
-        databaseHost="${ESPOCRM_DATABASE_HOST}:${ESPOCRM_DATABASE_PORT}"
-    fi
-
-    for i in {1..20}
-    do
-        settingsTestResult=$(runInstallationStep "settingsTest" "dbPlatform=$(urlEncode "$ESPOCRM_DATABASE_PLATFORM")&hostName=$(urlEncode "$databaseHost")&dbName=$(urlEncode "$ESPOCRM_DATABASE_NAME")&dbUserName=$(urlEncode "$ESPOCRM_DATABASE_USER")&dbUserPass=$(urlEncode "$ESPOCRM_DATABASE_PASSWORD")" true 2>&1)
-
-        if [[ ! "$settingsTestResult" == *"Error:"* ]]; then
-            break
-        fi
-
-        sleep 5
-    done
-
-    if [[ "$settingsTestResult" == *"Error:"* ]] && [[ "$settingsTestResult" == *"[errorCode] => 2002"* ]]; then
-        echo >&2 "warning: Unable connect to Database server. Continuing anyway"
-        return
-    fi
-
-    runInstallationStep "setupConfirmation" "db-platform=$(urlEncode "$ESPOCRM_DATABASE_PLATFORM")&host-name=$(urlEncode "$databaseHost")&db-name=$(urlEncode "$ESPOCRM_DATABASE_NAME")&db-user-name=$(urlEncode "$ESPOCRM_DATABASE_USER")&db-user-password=$(urlEncode "$ESPOCRM_DATABASE_PASSWORD")"
-    runInstallationStep "checkPermission"
-    runInstallationStep "saveSettings" "site-url=$(urlEncode "$ESPOCRM_SITE_URL")&default-permissions-user=www-data&default-permissions-group=www-data"
-    runInstallationStep "buildDatabase"
-    runInstallationStep "createUser" "user-name=$(urlEncode "$ESPOCRM_ADMIN_USERNAME")&user-pass=$(urlEncode "$ESPOCRM_ADMIN_PASSWORD")"
-    runInstallationStep "savePreferences" "$(join '&' "${preferences[@]}")"
-    runInstallationStep "finish"
-
-    saveConfigParam "jobRunInParallel" "true"
+    bin/command config:set "defaultPermissions.user" "www-data"
+    bin/command config:set "defaultPermissions.group" "www-data"
 
     setPermissions
 
-    echo >&2 "info: Installation completed successfully."
-}
+    bin/command config:set database.platform "${ESPOCRM_DATABASE_PLATFORM}"
+    bin/command config:set database.host "${ESPOCRM_DATABASE_HOST}"
+    bin/command config:set database.port "${ESPOCRM_DATABASE_PORT-}"
+    bin/command config:set database.dbname "${ESPOCRM_DATABASE_NAME}"
+    bin/command config:set database.user "${ESPOCRM_DATABASE_USER}"
+    bin/command config:set database.password "${ESPOCRM_DATABASE_PASSWORD}"
 
-runInstallationStep() {
-    local actionName="$1"
-    local returnResult=${3-false}
-
-    local result
-
-    if [ -n "${2-}" ]; then
-        local data="$2"
-        result=$(php install/cli.php -a "$actionName" -d "$data")
-    else
-        result=$(php install/cli.php -a "$actionName")
-    fi
-
-    if [ "$returnResult" = true ]; then
-        echo >&2 "$result"
+    if ! verifyDatabaseReady ; then
+        echo >&2 "warning: Failed to install: database connection error. Continuing anyway."
         return
     fi
 
-    if [[ "$result" == *"Error:"* ]]; then
-        echo >&2 "error: Installation error, more details:"
-        echo >&2 "$result"
-        exit 1
-    fi
+    bin/command rebuild >/dev/null 2>&1 || {
+        echo >&2 "warning: Failed to install: rebuild error. Continuing anyway."
+        return
+    }
+
+    bin/command create-admin-user "$ESPOCRM_ADMIN_USERNAME" >/dev/null 2>&1
+    printf '%s\n' "$ESPOCRM_ADMIN_PASSWORD" | bin/command set-password admin >/dev/null 2>&1
+
+    bin/command config:set "language" "$ESPOCRM_LANGUAGE"
+    bin/command config:set "siteUrl" "$ESPOCRM_SITE_URL"
+
+    [ -n "${ESPOCRM_DATE_FORMAT-}" ] && bin/command config:set "dateFormat" "$ESPOCRM_DATE_FORMAT"
+    [ -n "${ESPOCRM_TIME_FORMAT-}" ] && bin/command config:set "timeFormat" "$ESPOCRM_TIME_FORMAT"
+    [ -n "${ESPOCRM_TIME_ZONE-}" ] && bin/command config:set "timeZone" "$ESPOCRM_TIME_ZONE"
+    [ -n "${ESPOCRM_WEEK_START-}" ] && bin/command config:set "weekStart" "$ESPOCRM_WEEK_START" --type=int
+    [ -n "${ESPOCRM_DEFAULT_CURRENCY-}" ] && bin/command config:set "defaultCurrency" "$ESPOCRM_DEFAULT_CURRENCY"
+    [ -n "${ESPOCRM_THOUSAND_SEPARATOR-}" ] && bin/command config:set "thousandSeparator" "$ESPOCRM_THOUSAND_SEPARATOR"
+    [ -n "${ESPOCRM_DECIMAL_MARK-}" ] && bin/command config:set "decimalMark" "$ESPOCRM_DECIMAL_MARK"
+
+    bin/command config:set "jobRunInParallel" "true" --type=bool
+
+    bin/command app-check || {
+        echo >&2 "warning: Failed to install: app-check error. Continuing anyway."
+        return
+    }
+
+    php install/cli.php -a finish
+
+    echo >&2 "info: Installation completed successfully."
 }
 
 setPermissions() {
@@ -116,6 +89,12 @@ setEnvironments() {
     for defaultParam in "${!DEFAULTS[@]}"
     do
         setEnvValue "${defaultParam}" "${DEFAULTS[$defaultParam]}"
+    done
+
+    for optionName in "${!OPTIONAL_PARAMS[@]}"
+    do
+        local varName="${OPTIONAL_PARAMS[$optionName]}"
+        setEnvValue "${varName}" "${!varName-}"
     done
 }
 
@@ -149,9 +128,9 @@ warnInsecureCredentials() {
 # ------------------------- START -------------------------------------
 # Global variables
 CUSTOM_RESOURCE_LIST=(
-    "/var/www/html/data"
-    "/var/www/html/custom"
-    "/var/www/html/client/custom"
+    "./data"
+    "./custom"
+    "./client/custom"
 )
 
 declare -A DEFAULTS=(
