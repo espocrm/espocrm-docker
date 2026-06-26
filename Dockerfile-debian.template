@@ -123,11 +123,11 @@ RUN set -eux; \
     rm -rf /usr/src/EspoCRM*
 
 RUN set -eux; \
-    find /var/www/html -type d -exec chmod 755 {} +; \
-    find /var/www/html -type f -exec chmod 644 {} +; \
-    chown -R root:root /var/www/html; \
-    chown -R www-data:www-data /var/www/html/{data,custom,client/custom}; \
-    chmod +x /var/www/html/bin/command
+    find . -type d -exec chmod 755 {} +; \
+    find . -type f -exec chmod 644 {} +; \
+    chown -R root:root .; \
+    chown -R www-data:www-data ./data ./custom ./client/custom; \
+    chmod +x ./bin/command
 
 COPY ./docker-*.sh  /usr/local/bin/
 
