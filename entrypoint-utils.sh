@@ -41,6 +41,7 @@ normalizeConfigParamName() {
     fi
 
     value="${value,,}"
+    value="${value//__/.}"
 
     local result="" i=0 next
     while [[ $i -lt ${#value} ]]; do
