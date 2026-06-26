@@ -123,6 +123,7 @@ RUN set -eux; \
     rm -rf /usr/src/EspoCRM*
 
 RUN set -eux; \
+    rm -rf ./install; \
     find . -type d -exec chmod 755 {} +; \
     find . -type f -exec chmod 644 {} +; \
     chown -R root:root .; \
