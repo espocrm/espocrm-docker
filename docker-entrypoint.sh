@@ -31,7 +31,7 @@ actionInstall() {
 
     rm -rf ./data/cache
 
-    php install/cli.php -a main
+    bin/command config:populate
 
     bin/command config:set "defaultPermissions.user" "www-data"
     bin/command config:set "defaultPermissions.group" "www-data"
@@ -162,7 +162,7 @@ warnInsecureCredentials
 
 start
 
-applyConfigEnvironments
+applyConfigEnv
 # ------------------------- END -------------------------------------
 
 exec "$@"

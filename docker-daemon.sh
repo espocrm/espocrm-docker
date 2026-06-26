@@ -5,8 +5,7 @@ set -euo pipefail
 # entrypoint-utils.sh
 # END: entrypoint-utils.sh
 
-checkInstanceReady
-
-applyConfigEnvironments
+exitIfNotReady
+applyConfigEnv
 
 exec /usr/local/bin/php /var/www/html/daemon.php
