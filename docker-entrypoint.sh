@@ -6,6 +6,8 @@ set -euo pipefail
 # END: entrypoint-utils.sh
 
 start() {
+    warnUnsupportedInstallation
+
     if [ "$(bin/command config:get isInstalled)" = "true" ]; then
         actionUpgrade
         return
@@ -124,6 +126,22 @@ warnInsecureCredentials() {
 
     echo >&2 'warning: Set strong environment variable values before using this instance in production.'
     echo >&2 '****************************************************'
+}
+
+# Will be removed in the future
+warnUnsupportedInstallation() {
+    if [ -f bin/command ]; then
+        return
+    fi
+
+    echo >&2 "error: Unsupported installation method detected."
+    echo >&2 "error: Do not mount /var/www/html directly. Instead, mount the following directories separately:"
+    echo >&2 "error:   /var/www/html/custom"
+    echo >&2 "error:   /var/www/html/data"
+    echo >&2 "error:   /var/www/html/client/custom"
+    echo >&2 "error: See https://docs.espocrm.com/administration/docker/installation/#upgrading-to-espocrm-10"
+
+    exit 1
 }
 
 # ------------------------- START -------------------------------------
