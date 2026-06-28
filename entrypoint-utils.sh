@@ -1,10 +1,42 @@
 CONFIG_PREFIX="ESPOCRM_CONFIG_"
 
+# This allows containers with /var/www/html directory mounted directly to keep running.
+# To be removed in future releases.
+isLegacy() {
+    if awk '{print $2}' /proc/mounts | grep -qxE "/var/www/html/?"; then
+        return 0
+    fi
+
+    return 1
+}
+
 exitIfNotReady() {
+    if isLegacy; then
+        return
+    fi
+
     bin/command app-check >/dev/null 2>&1 || {
         echo >&2 "Waiting for the main container to be ready..."
         exit 0
     }
+}
+
+applyConfigEnv() {
+    if isLegacy; then
+        return
+    fi
+
+    local name
+    local value
+
+    compgen -v | while read -r name; do
+        if [[ $name != "$CONFIG_PREFIX"* ]]; then
+            continue
+        fi
+
+        value="${!name}"
+        saveConfigValue "$name" "$value"
+    done
 }
 
 verifyDatabaseReady() {
@@ -17,20 +49,6 @@ verifyDatabaseReady() {
 
     echo >&2 "error: Database connection failed"
     return 1
-}
-
-applyConfigEnv() {
-    local name
-    local value
-
-    compgen -v | while read -r name; do
-        if [[ $name != "$CONFIG_PREFIX"* ]]; then
-            continue
-        fi
-
-        value="${!name}"
-        saveConfigValue "$name" "$value"
-    done
 }
 
 normalizeConfigParamName() {

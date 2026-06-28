@@ -6,7 +6,9 @@ set -euo pipefail
 # END: entrypoint-utils.sh
 
 start() {
-    warnLegacyInstallation
+    if isLegacy; then
+        return
+    fi
 
     if [ "$(bin/command config:get isInstalled)" = "true" ]; then
         actionUpgrade
@@ -129,7 +131,7 @@ warnInsecureCredentials() {
 }
 
 warnLegacyInstallation() {
-    if ! awk '{print $2}' /proc/mounts | grep -qxE "/var/www/html/?"; then
+    if ! isLegacy; then
         return
     fi
 
@@ -180,7 +182,9 @@ declare -A OPTIONAL_PARAMS=(
 )
 
 setEnvironments
+
 warnInsecureCredentials
+warnLegacyInstallation
 
 start
 
