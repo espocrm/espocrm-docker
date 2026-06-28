@@ -6,7 +6,7 @@ set -euo pipefail
 # END: entrypoint-utils.sh
 
 start() {
-    warnUnsupportedInstallation
+    warnLegacyInstallation
 
     if [ "$(bin/command config:get isInstalled)" = "true" ]; then
         actionUpgrade
@@ -128,20 +128,23 @@ warnInsecureCredentials() {
     echo >&2 '****************************************************'
 }
 
-# Will be removed in the future
-warnUnsupportedInstallation() {
-    if [ -f bin/command ]; then
+warnLegacyInstallation() {
+    if ! awk '{print $2}' /proc/mounts | grep -qxE "/var/www/html/?"; then
         return
     fi
 
-    echo >&2 "error: Unsupported installation method detected."
-    echo >&2 "error: Do not mount /var/www/html directly. Instead, mount the following directories separately:"
-    echo >&2 "error:   /var/www/html/custom"
-    echo >&2 "error:   /var/www/html/data"
-    echo >&2 "error:   /var/www/html/client/custom"
-    echo >&2 "error: See https://docs.espocrm.com/administration/docker/installation/#upgrading-to-espocrm-10"
+    echo >&2 "warning: LEGACY INSTALLATION METHOD DETECTED."
+    echo >&2 "warning: Do not mount /var/www/html directly. Instead, mount the following directories separately:"
+    echo >&2 "warning:   /var/www/html/custom"
+    echo >&2 "warning:   /var/www/html/data"
+    echo >&2 "warning:   /var/www/html/client/custom"
+    echo >&2 "warning: No further EspoCRM upgrades will be available."
+    echo >&2 "warning: See https://docs.espocrm.com/administration/docker/installation/#upgrading-to-espocrm-10"
 
-    exit 1
+    if [ ! -f bin/command ]; then
+        echo >&2 "error: Container startup aborted. Migrate to the supported volume layout shown above and restart."
+        exit 1
+    fi
 }
 
 # ------------------------- START -------------------------------------
