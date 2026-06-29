@@ -98,8 +98,16 @@ RUN set -eux; \
     curl -fSL "{{ .downloadUrl }}" -o EspoCRM.zip; \
     echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-${ESPOCRM_VERSION}" /usr/src/espocrm; \
-    rm EspoCRM.zip
+    cp -a "/usr/src/EspoCRM-${ESPOCRM_VERSION}/." /var/www/html/; \
+    rm -rf /usr/src/EspoCRM*
+
+RUN set -eux; \
+    rm -rf ./install; \
+    find . -type d -exec chmod 755 {} +; \
+    find . -type f -exec chmod 644 {} +; \
+    chown -R root:root .; \
+    chown -R www-data:www-data ./data ./custom ./client/custom; \
+    chmod +x ./bin/command
 
 COPY ./docker-*.sh  /usr/local/bin/
 
