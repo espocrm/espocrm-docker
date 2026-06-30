@@ -31,8 +31,8 @@ actionMigrate() {
         version="$(bin/command config:get version)"
 
         echo >&2 "error: Migration failed: customizations may be incompatible with the new version."
-        echo >&2 "error: Resolve them or downgrade to version \"$version\"."
-        echo >&2 "error: See https://docs.espocrm.com/administration/docker/installation/#incompatible-customizations"
+        echo >&2 "error:   Resolve them or downgrade to version \"$version\"."
+        echo >&2 "error:   See https://docs.espocrm.com/administration/docker/installation/#incompatible-customizations"
         return 1
     }
 
