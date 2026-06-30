@@ -11,18 +11,18 @@ start() {
     fi
 
     if [ "$(bin/command config:get isInstalled)" = "true" ]; then
-        actionUpgrade
+        actionMigrate
         return
     fi
 
     actionInstall
 }
 
-actionUpgrade() {
-    echo >&2 "info: Running \"upgrade\" action."
+actionMigrate() {
+    echo >&2 "info: Running \"migrate\" action."
 
     if ! verifyDatabaseReady ; then
-        echo >&2 "error: Unable to upgrade: database is not ready."
+        echo >&2 "error: Migration failed: database is not ready."
         return 1
     fi
 
@@ -30,7 +30,9 @@ actionUpgrade() {
         local version
         version="$(bin/command config:get version)"
 
-        echo >&2 "error: Incompatible customizations detected. Resolve them or downgrade to version \"$version\". See https://docs.espocrm.com/administration/docker/installation/#incompatible-customizations"
+        echo >&2 "error: Migration failed: customizations may be incompatible with the new version."
+        echo >&2 "error: Resolve them or downgrade to version \"$version\"."
+        echo >&2 "error: See https://docs.espocrm.com/administration/docker/installation/#incompatible-customizations"
         return 1
     }
 
