@@ -26,16 +26,15 @@ actionUpgrade() {
         return 1
     fi
 
-    bin/command migrate
-    setPermissions
+    bin/command migrate || {
+        local version
+        version="$(bin/command config:get version)"
 
-    bin/command customization-check || {
-        local prevVersion
-        prevVersion="$(bin/command config:get prevVersion)"
-
-        echo >&2 "error: Incompatible customizations detected. Fix them or downgrade back to version \"$prevVersion\". See https://docs.espocrm.com/administration/docker/installation/#incompatible-customizations"
+        echo >&2 "error: Incompatible customizations detected. Resolve them or downgrade to version \"$version\". See https://docs.espocrm.com/administration/docker/installation/#incompatible-customizations"
         return 1
     }
+
+    setPermissions
 }
 
 actionInstall() {
