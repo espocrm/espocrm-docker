@@ -10,6 +10,10 @@ start() {
         return
     fi
 
+    # Required for web servers in FPM mode
+    copyPublicFiles
+    copyClientFiles
+
     if [ "$(bin/command config:get isInstalled)" = "true" ]; then
         actionMigrate
         return
@@ -112,6 +116,28 @@ setEnvironments() {
         local varName="${OPTIONAL_PARAMS[$optionName]}"
         setEnvValue "${varName}" "${!varName-}"
     done
+}
+
+copyPublicFiles() {
+    if ! awk '{print $2}' /proc/mounts | grep -qxF "/var/www/html/public"; then
+        return
+    fi
+
+    echo >&2 "info: Copying public files."
+
+    rm -rf ./public/*
+    cp -a /usr/src/espocrm/public/. ./public/
+}
+
+copyClientFiles() {
+    if ! awk '{print $2}' /proc/mounts | grep -qxF "/var/www/html/client"; then
+        return
+    fi
+
+    echo >&2 "info: Copying client files."
+
+    find ./client/ -mindepth 1 -maxdepth 1 ! -name 'custom' -exec rm -rf {} +
+    cp -a /usr/src/espocrm/client/. ./client/
 }
 
 warnInsecureCredentials() {

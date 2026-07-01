@@ -99,13 +99,16 @@ RUN set -eux; \
     echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
     cp -a "/usr/src/EspoCRM-${ESPOCRM_VERSION}/." /var/www/html/; \
-    rm -rf /usr/src/EspoCRM*
+    rm -rf /usr/src/EspoCRM*; \
+    mkdir -p /usr/src/espocrm; \
+    cp -a ./client/ /usr/src/espocrm/; \
+    cp -a ./public/ /usr/src/espocrm/
 
 RUN set -eux; \
     rm -rf ./install; \
     find . -type d -exec chmod 755 {} +; \
     find . -type f -exec chmod 644 {} +; \
-    chown -R root:root .; \
+    chown -R root:root . /usr/src/espocrm; \
     chown -R www-data:www-data ./data ./custom ./client/custom; \
     chmod +x ./bin/command
 
