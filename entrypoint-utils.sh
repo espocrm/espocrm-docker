@@ -36,14 +36,14 @@ applyConfigEnv() {
 }
 
 verifyDatabaseReady() {
-    for i in {1..40}; do
+    for i in {1..20}; do
         [ "$(bin/command db:check 2>/dev/null)" = "OK" ] && return 0
 
-        echo >&2 "Waiting for database connection (attempt $i/40)..."
+        echo >&2 "Waiting for database connection (attempt $i/20)..."
         sleep 3
     done
 
-    echo >&2 "error: Database connection failed"
+    echo >&2 "error: Database connection failed."
     return 1
 }
 

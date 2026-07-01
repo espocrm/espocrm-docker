@@ -27,7 +27,7 @@ actionMigrate() {
 
     if ! verifyDatabaseReady ; then
         echo >&2 "error: Migration failed: database is not ready."
-        return 1
+        exit 1
     fi
 
     bin/command migrate || {
@@ -37,7 +37,7 @@ actionMigrate() {
         echo >&2 "error: Migration failed: customizations may be incompatible with the new version."
         echo >&2 "error:   Resolve them or downgrade to version \"$version\"."
         echo >&2 "error:   See https://docs.espocrm.com/administration/docker/installation/#incompatible-customizations"
-        return 1
+        exit 1
     }
 
     bin/command clear-cache
@@ -65,13 +65,13 @@ actionInstall() {
     bin/command config:set database.password "${ESPOCRM_DATABASE_PASSWORD}"
 
     if ! verifyDatabaseReady ; then
-        echo >&2 "warning: Failed to install: database connection error. Continuing anyway."
-        return
+        echo >&2 "error: Installation failed: database connection error. Verify the host, port, and credentials, then restart the container."
+        exit 1
     fi
 
     bin/command rebuild >/dev/null 2>&1 || {
-        echo >&2 "warning: Failed to install: rebuild error. Continuing anyway."
-        return
+        echo >&2 "error: Installation failed: rebuild failed. Check data/logs/ for details, then restart the container."
+        exit 1
     }
 
     bin/command create-admin-user "$ESPOCRM_ADMIN_USERNAME" >/dev/null 2>&1
@@ -92,8 +92,8 @@ actionInstall() {
     bin/command config:set "jobRunInParallel" "true" --type=bool
 
     bin/command app-check || {
-        echo >&2 "warning: Failed to install: app-check error. Continuing anyway."
-        return
+        echo >&2 "error: Installation failed: app-check error. Check data/logs/ for details, then restart the container."
+        exit 1
     }
 
     bin/command config:set "isInstalled" "true" --type=bool
