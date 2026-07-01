@@ -36,6 +36,8 @@ actionMigrate() {
         return 1
     }
 
+    bin/command clear-cache
+
     setPermissions
 }
 
