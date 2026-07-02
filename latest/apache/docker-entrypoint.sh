@@ -3,358 +3,112 @@
 set -euo pipefail
 
 # entrypoint-utils.sh
-configPrefix="ESPOCRM_CONFIG_"
+CONFIG_PREFIX="ESPOCRM_CONFIG_"
 
-declare -A configPrefixArrayList=(
-    [logger]="ESPOCRM_CONFIG_LOGGER_"
-    [database]="ESPOCRM_CONFIG_DATABASE_"
-)
-
-compareVersion() {
-    local version1="$1"
-    local version2="$2"
-    local operator="$3"
-
-    php -r 'echo version_compare($argv[1], $argv[2], $argv[3]);' "$version1" "$version2" "$operator"
+# This allows containers with /var/www/html directory mounted directly to keep running.
+# To be removed in future releases.
+isLegacy() {
+    awk '{print $2}' /proc/mounts | grep -qxE "/var/www/html"
 }
 
-join() {
-    local sep="$1"; shift
-    local out; printf -v out "${sep//%/%%}%s" "$@"
-    echo "${out#$sep}"
-}
-
-getConfigParamFromFile() {
-    local name="$1"
-
-    php -r "
-        \$name = \$argv[1];
-
-        if (file_exists('/var/www/html/data/state.php')) {
-            \$config=include('/var/www/html/data/state.php');
-
-            if (array_key_exists(\$name, \$config)) {
-                echo \$config[\$name];
-                exit;
-            }
-        }
-
-        if (file_exists('/var/www/html/data/config-internal.php')) {
-            \$config=include('/var/www/html/data/config-internal.php');
-
-            if (array_key_exists(\$name, \$config)) {
-                echo \$config[\$name];
-                exit;
-            }
-        }
-
-        if (file_exists('/var/www/html/data/config.php')) {
-            \$config=include('/var/www/html/data/config.php');
-
-            if (array_key_exists(\$name, \$config)) {
-                echo \$config[\$name];
-                exit;
-            }
-        }
-    " "$name"
-}
-
-getConfigParam() {
-    local name="$1"
-
-    php -r "
-        \$name = \$argv[1];
-
-        require_once('/var/www/html/bootstrap.php');
-
-        \$app = new \Espo\Core\Application();
-        \$config = \$app->getContainer()->get('config');
-
-        echo \$config->get(\$name);
-    " "$name"
-}
-
-# Bool: saveConfigParam "jobRunInParallel" "true"
-# String: saveConfigParam "language" "'en_US'"
-saveConfigParam() {
-    local name="$1"
-    local value="$2"
-
-    php -r "
-        \$name = \$argv[1];
-        \$rawValue = \$argv[2];
-
-        \$normalizeValue = static function (string \$value) {
-            if (\$value === 'null') {
-                return null;
-            }
-
-            if (\$value === 'true') {
-                return true;
-            }
-
-            if (\$value === 'false') {
-                return false;
-            }
-
-            if (preg_match('/^-?(?:0|[1-9][0-9]*)$/', \$value)) {
-                return (int) \$value;
-            }
-
-            if (preg_match('/^-?(?:[0-9]*\\.[0-9]+|[0-9]+\\.[0-9]*)$/', \$value)) {
-                return (float) \$value;
-            }
-
-            return \$value;
-        };
-
-        \$value = \$normalizeValue(\$rawValue);
-
-        require_once('/var/www/html/bootstrap.php');
-
-        \$app = new \Espo\Core\Application();
-        \$config = \$app->getContainer()->get('config');
-
-        if (\$config->get(\$name) === \$value) {
-            return;
-        }
-
-        \$injectableFactory = \$app->getContainer()->get('injectableFactory');
-        \$configWriter = \$injectableFactory->create('\\Espo\\Core\\Utils\\Config\\ConfigWriter');
-
-        \$configWriter->set(\$name, \$value);
-        \$configWriter->save();
-    " "$name" "$value"
-}
-
-saveConfigArrayParam() {
-    local key1="$1"
-    local key2="$2"
-    local value="$3"
-
-    php -r "
-        \$key1 = \$argv[1];
-        \$key2 = \$argv[2];
-        \$rawValue = \$argv[3];
-
-        \$normalizeValue = static function (string \$value) {
-            if (\$value === 'null') {
-                return null;
-            }
-
-            if (\$value === 'true') {
-                return true;
-            }
-
-            if (\$value === 'false') {
-                return false;
-            }
-
-            if (preg_match('/^-?(?:0|[1-9][0-9]*)$/', \$value)) {
-                return (int) \$value;
-            }
-
-            if (preg_match('/^-?(?:[0-9]*\\.[0-9]+|[0-9]+\\.[0-9]*)$/', \$value)) {
-                return (float) \$value;
-            }
-
-            return \$value;
-        };
-
-        \$value = \$normalizeValue(\$rawValue);
-
-        require_once('/var/www/html/bootstrap.php');
-
-        \$app = new \Espo\Core\Application();
-        \$config = \$app->getContainer()->get('config');
-
-        \$arrayValue = \$config->get(\$key1) ?? [];
-
-        if (!is_array(\$arrayValue)) {
-            return;
-        }
-
-        if (array_key_exists(\$key2, \$arrayValue) && \$arrayValue[\$key2] === \$value) {
-            return;
-        }
-
-        \$injectableFactory = \$app->getContainer()->get('injectableFactory');
-        \$configWriter = \$injectableFactory->create('\\Espo\\Core\\Utils\\Config\\ConfigWriter');
-
-        \$arrayValue[\$key2] = \$value;
-
-        \$configWriter->set(\$key1, \$arrayValue);
-        \$configWriter->save();
-    " "$key1" "$key2" "$value"
-}
-
-checkInstanceReady() {
-    local isInstalled
-    isInstalled=$(getConfigParamFromFile "isInstalled")
-
-    if [ -z "$isInstalled" ] || [ "$isInstalled" != 1 ]; then
-        echo >&2 "Instance is not ready: installation in progress"
-        exit 0
+exitIfNotReady() {
+    if isLegacy; then
+        return
     fi
 
-    local maintenanceMode
-    maintenanceMode=$(getConfigParamFromFile "maintenanceMode")
-
-    if [ -n "$maintenanceMode" ] && [ "$maintenanceMode" = 1 ]; then
-        echo >&2 "Instance is not ready: waiting for maintenance mode to be disabled"
+    bin/command app-check >/dev/null 2>&1 || {
+        echo >&2 "Waiting for the main container to be ready..."
         exit 0
-    fi
-
-    if ! verifyDatabaseReady ; then
-        exit 0
-    fi
+    }
 }
 
-isDatabaseReady() {
-    php -r "
-        require_once('/var/www/html/bootstrap.php');
+applyConfigEnv() {
+    if isLegacy; then
+        return
+    fi
 
-        \$app = new \Espo\Core\Application();
+    local name
+    local value
 
-        \$injectableFactory = \$app->getContainer()->get('injectableFactory');
-        \$helper = \$injectableFactory->create('\\Espo\\Core\\Utils\\Database\\Helper');
+    compgen -v | while read -r name; do
+        if [[ $name != "$CONFIG_PREFIX"* ]]; then
+            continue
+        fi
 
-        try {
-            \$helper->createPDO();
-        } catch (\Throwable \$e) {
-            exit(1);
-        }
-
-        exit(0);
-    "
+        value="${!name}"
+        saveConfigValue "$name" "$value"
+    done
 }
 
 verifyDatabaseReady() {
-    for i in {1..40}
-    do
-        if isDatabaseReady; then
-            return 0
-        fi
+    for i in {1..20}; do
+        [ "$(bin/command db:check 2>/dev/null)" = "OK" ] && return 0
 
-        echo >&2 "Waiting for database connection (attempt $i/40)..."
+        echo >&2 "Waiting for database connection (attempt $i/20)..."
         sleep 3
     done
 
-    echo >&2 "error: Database connection failed"
+    echo >&2 "error: Database connection failed."
     return 1
-}
-
-applyConfigEnvironments() {
-    local envName
-    local envValue
-
-    compgen -v | while read -r envName; do
-
-        if [[ $envName != "$configPrefix"* ]]; then
-            continue
-        fi
-
-        envValue="${!envName}"
-
-        if isConfigArrayParam "$envName" ; then
-            saveConfigArrayValue "$envName" "$envValue"
-            continue
-        fi
-
-        saveConfigValue "$envName" "$envValue"
-
-    done
 }
 
 normalizeConfigParamName() {
     local value="$1"
-    local prefix=${2:-"$configPrefix"}
 
-    php -r "
-        \$value = \$argv[1];
-        \$prefix = \$argv[2];
+    if [[ "${value^^}" == "${CONFIG_PREFIX^^}"* ]]; then
+        value="${value:${#CONFIG_PREFIX}}"
+    fi
 
-        \$value = str_ireplace(\$prefix, '', \$value);
-        \$value = strtolower(\$value);
+    value="${value,,}"
+    value="${value//__/.}"
 
-        \$value = preg_replace_callback(
-            '/_([a-zA-Z])/',
-            function (\$matches) {
-                return strtoupper(\$matches[1]);
-            },
-            \$value
-        );
+    local result="" i=0 next
+    while [[ $i -lt ${#value} ]]; do
+        if [[ "${value:$i:1}" == "_" ]]; then
+            next="${value:$((i+1)):1}"
+            if [[ "$next" =~ [a-zA-Z] ]]; then
+                result+="${next^^}"
+                i=$(( i + 2 ))
+                continue
+            fi
+        fi
+        result+="${value:$i:1}"
+        i=$(( i + 1 ))
+    done
 
-        echo \$value;
-    " "$value" "$prefix"
+    echo "$result"
 }
 
 normalizeConfigParamValue() {
     local value="$1"
+    local trimmed="$value"
 
-    php -r "
-        \$value = \$argv[1];
-        \$trimmed = trim(\$value);
+    trimmed="${trimmed#"${trimmed%%[![:space:]]*}"}"
+    trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
 
-        if (preg_match('/^\'(.*)\'$/s', \$trimmed, \$matches)) {
-            echo str_replace('\\\\\'', '\'', \$matches[1]);
-            return;
-        }
+    if [[ "${trimmed:0:1}" == "'" && "${trimmed: -1:1}" == "'" ]]; then
+        local inner="${trimmed:1:${#trimmed}-2}"
+        local pat="\\\\"
+        pat+="'"
+        local repl="'"
+        echo "${inner//$pat/$repl}"
+        return
+    fi
 
-        echo \$value;
-    " "$value"
-}
-
-isConfigArrayParam() {
-    local envName="$1"
-
-    for i in "${!configPrefixArrayList[@]}"
-    do
-        if [[ "$envName" != ${configPrefixArrayList[$i]}* ]]; then
-            continue
-        fi
-
-        return 0 #true
-    done
-
-    return 1 #false
+    echo "$value"
 }
 
 saveConfigValue() {
-    local envName="$1"
-    local envValue="$2"
+    local name="$1"
+    local value="$2"
 
-    local key
-    key=$(normalizeConfigParamName "$envName")
+    local normalizedName
+    normalizedName=$(normalizeConfigParamName "$name")
 
-    local value
-    value=$(normalizeConfigParamValue "$envValue")
+    local normalizedValue
+    normalizedValue=$(normalizeConfigParamValue "$value")
 
-    saveConfigParam "$key" "$value"
-}
-
-saveConfigArrayValue() {
-    local envName="$1"
-    local envValue="$2"
-
-    for i in "${!configPrefixArrayList[@]}"
-    do
-        if [[ "$envName" != ${configPrefixArrayList[$i]}* ]]; then
-            continue
-        fi
-
-        local key1="$i"
-
-        local key2
-        key2=$(normalizeConfigParamName "$envName" "${configPrefixArrayList[$i]}")
-
-        break
-    done
-
-    local value
-    value=$(normalizeConfigParamValue "$envValue")
-
-    saveConfigArrayParam "$key1" "$key2" "$value"
+    bin/command config:set "$normalizedName" "$normalizedValue" --type=auto
 }
 
 setEnvValue() {
@@ -374,224 +128,106 @@ setEnvValue() {
     export "$var"="$val"
     unset "$fileVar"
 }
-
-urlEncode() {
-    local value="${1-}"
-    php -r 'echo rawurlencode($argv[1]);' "$value"
-}
 # END: entrypoint-utils.sh
 
 start() {
-    if [ -f "/var/www/html/data/config.php" ]; then
-        local isInstalled
-        isInstalled=$(getConfigParamFromFile "isInstalled")
+    if isLegacy; then
+        return
+    fi
 
-        if [ -n "$isInstalled" ] && [ "$isInstalled" = 1 ]; then
-            local installedVersion
-            installedVersion=$(getConfigParamFromFile "version")
+    # Required for web servers in FPM mode
+    copyPublicFiles
+    copyClientFiles
 
-            local isVersionGreater
-            isVersionGreater=$(compareVersion "$ESPOCRM_VERSION" "$installedVersion" ">")
-
-            if [ -n "$isVersionGreater" ]; then
-                actionUpgrade
-                return
-            fi
-
-            # no need any action
-            return
-        fi
-
-        actionReinstall
+    if [ "$(bin/command config:get isInstalled)" = "true" ]; then
+        actionMigrate
         return
     fi
 
     actionInstall
 }
 
-actionInstall() {
-    echo >&2 "info: Run \"install\" action."
-
-    if [ ! -d "$SOURCE_FILES" ]; then
-        echo >&2 "error: Source files [$SOURCE_FILES] are not found."
-        exit 1
-    fi
-
-    cp -a "$SOURCE_FILES/." /var/www/html/
-
-    installEspocrm
-}
-
-actionReinstall() {
-    echo >&2 "info: Run \"reinstall\" action."
-
-    if [ -f "/var/www/html/install/config.php" ]; then
-        sed -i "s/'isInstalled' => true/'isInstalled' => false/g" "/var/www/html/install/config.php"
-    fi
-
-    rm -rf /var/www/html/data/cache
-
-    installEspocrm
-}
-
-actionUpgrade() {
-    echo >&2 "info: Run \"upgrade\" action."
-
-    MAX_UPGRADE_COUNT=20
-    UPGRADE_NUMBER=0
+actionMigrate() {
+    echo >&2 "info: Running \"migrate\" action."
 
     if ! verifyDatabaseReady ; then
-        echo >&2 "error: Unable to upgrade the instance. Database is not ready."
-        return 1
-    fi
-
-    if ! runUpgradeProcess; then
-        echo >&2 "error: Upgrade process failed. Starting the actual version."
-        return 0 # the container will be started, but with the actual version
-    fi
-
-    setPermissions
-    return 0
-}
-
-runUpgradeProcess() {
-    UPGRADE_NUMBER=$((UPGRADE_NUMBER+1))
-
-    if [ $UPGRADE_NUMBER -gt $MAX_UPGRADE_COUNT ];then
-        echo >&2 "error: The MAX_UPGRADE_COUNT exceed. The upgrading process has been stopped."
-        return 1
-    fi
-
-    local installedVersion
-    installedVersion=$(getConfigParamFromFile "version")
-
-    local isVersionEqual
-    isVersionEqual=$(compareVersion "$installedVersion" "$ESPOCRM_VERSION" ">=")
-
-    if [ -n "$isVersionEqual" ]; then
-        echo >&2 "info: Upgrading is finished. EspoCRM version is $installedVersion."
-        return 0
-    fi
-
-    echo >&2 "info: Start upgrading from version $installedVersion."
-
-    if ! runUpgradeStep ; then
-        return 1
-    fi
-
-    runUpgradeProcess
-}
-
-runUpgradeStep() {
-    local result
-    result=$(php command.php upgrade -y --toVersion="$ESPOCRM_VERSION")
-
-    if [[ "$result" == *"Error:"* ]]; then
-        echo >&2 "error: Upgrade error, more details:"
-        echo >&2 "$result"
-
-        return 1 #false
-    fi
-
-    return 0 #true
-}
-
-installEspocrm() {
-    echo >&2 "info: Start EspoCRM installation"
-
-    declare -a preferences=()
-
-    for optionName in "${!OPTIONAL_PARAMS[@]}"
-    do
-        local varName="${OPTIONAL_PARAMS[$optionName]}"
-
-        setEnvValue "${varName}" "${!varName-}"
-
-        if [ -n "${!varName-}" ]; then
-            preferences+=("${optionName}=$(urlEncode "${!varName}")")
-        fi
-    done
-
-    runInstallationStep "step1" "user-lang=$(urlEncode "$ESPOCRM_LANGUAGE")"
-
-    local databaseHost="${ESPOCRM_DATABASE_HOST}"
-
-    if [ -n "$ESPOCRM_DATABASE_PORT" ]; then
-        databaseHost="${ESPOCRM_DATABASE_HOST}:${ESPOCRM_DATABASE_PORT}"
-    fi
-
-    for i in {1..20}
-    do
-        settingsTestResult=$(runInstallationStep "settingsTest" "dbPlatform=$(urlEncode "$ESPOCRM_DATABASE_PLATFORM")&hostName=$(urlEncode "$databaseHost")&dbName=$(urlEncode "$ESPOCRM_DATABASE_NAME")&dbUserName=$(urlEncode "$ESPOCRM_DATABASE_USER")&dbUserPass=$(urlEncode "$ESPOCRM_DATABASE_PASSWORD")" true 2>&1)
-
-        if [[ ! "$settingsTestResult" == *"Error:"* ]]; then
-            break
-        fi
-
-        sleep 5
-    done
-
-    if [[ "$settingsTestResult" == *"Error:"* ]] && [[ "$settingsTestResult" == *"[errorCode] => 2002"* ]]; then
-        echo >&2 "warning: Unable connect to Database server. Continuing anyway"
-        return
-    fi
-
-    runInstallationStep "setupConfirmation" "db-platform=$(urlEncode "$ESPOCRM_DATABASE_PLATFORM")&host-name=$(urlEncode "$databaseHost")&db-name=$(urlEncode "$ESPOCRM_DATABASE_NAME")&db-user-name=$(urlEncode "$ESPOCRM_DATABASE_USER")&db-user-password=$(urlEncode "$ESPOCRM_DATABASE_PASSWORD")"
-    runInstallationStep "checkPermission"
-    runInstallationStep "saveSettings" "site-url=$(urlEncode "$ESPOCRM_SITE_URL")&default-permissions-user=www-data&default-permissions-group=www-data"
-    runInstallationStep "buildDatabase"
-    runInstallationStep "createUser" "user-name=$(urlEncode "$ESPOCRM_ADMIN_USERNAME")&user-pass=$(urlEncode "$ESPOCRM_ADMIN_PASSWORD")"
-    runInstallationStep "savePreferences" "$(join '&' "${preferences[@]}")"
-    runInstallationStep "finish"
-
-    saveConfigParam "jobRunInParallel" "true"
-
-    setPermissions
-
-    echo >&2 "info: End EspoCRM installation"
-}
-
-runInstallationStep() {
-    local actionName="$1"
-    local returnResult=${3-false}
-
-    local result
-
-    if [ -n "${2-}" ]; then
-        local data="$2"
-        result=$(php install/cli.php -a "$actionName" -d "$data")
-    else
-        result=$(php install/cli.php -a "$actionName")
-    fi
-
-    if [ "$returnResult" = true ]; then
-        echo >&2 "$result"
-        return
-    fi
-
-    if [[ "$result" == *"Error:"* ]]; then
-        echo >&2 "error: Installation error, more details:"
-        echo >&2 "$result"
+        echo >&2 "error: Migration failed: database is not ready."
         exit 1
     fi
+
+    bin/command migrate || {
+        local version
+        version="$(bin/command config:get version)"
+
+        echo >&2 "error: Migration failed: customizations may be incompatible with the new version."
+        echo >&2 "error:   Resolve them or downgrade to version \"$version\"."
+        echo >&2 "error:   See https://docs.espocrm.com/administration/docker/installation/#incompatible-customizations"
+        exit 1
+    }
+
+    bin/command clear-cache
+
+    setPermissions
+}
+
+actionInstall() {
+    echo >&2 "info: Running \"install\" action."
+
+    rm -rf ./data/cache
+
+    bin/command config:populate
+
+    bin/command config:set "defaultPermissions.user" "www-data"
+    bin/command config:set "defaultPermissions.group" "www-data"
+
+    setPermissions
+
+    bin/command config:set database.platform "${ESPOCRM_DATABASE_PLATFORM}"
+    bin/command config:set database.host "${ESPOCRM_DATABASE_HOST}"
+    bin/command config:set database.port "${ESPOCRM_DATABASE_PORT-}"
+    bin/command config:set database.dbname "${ESPOCRM_DATABASE_NAME}"
+    bin/command config:set database.user "${ESPOCRM_DATABASE_USER}"
+    bin/command config:set database.password "${ESPOCRM_DATABASE_PASSWORD}"
+
+    if ! verifyDatabaseReady ; then
+        echo >&2 "error: Installation failed: database connection error. Verify the host, port, and credentials, then restart the container."
+        exit 1
+    fi
+
+    bin/command rebuild >/dev/null 2>&1 || {
+        echo >&2 "error: Installation failed: rebuild failed. Check data/logs/ for details, then restart the container."
+        exit 1
+    }
+
+    bin/command create-admin-user "$ESPOCRM_ADMIN_USERNAME" >/dev/null 2>&1
+    printf '%s\n' "$ESPOCRM_ADMIN_PASSWORD" | bin/command set-password admin >/dev/null 2>&1
+
+    bin/command config:set "language" "$ESPOCRM_LANGUAGE"
+    bin/command config:set "siteUrl" "$ESPOCRM_SITE_URL"
+
+    [ -n "${ESPOCRM_DATE_FORMAT-}" ] && bin/command config:set "dateFormat" "$ESPOCRM_DATE_FORMAT"
+    [ -n "${ESPOCRM_TIME_FORMAT-}" ] && bin/command config:set "timeFormat" "$ESPOCRM_TIME_FORMAT"
+    [ -n "${ESPOCRM_TIME_ZONE-}" ] && bin/command config:set "timeZone" "$ESPOCRM_TIME_ZONE"
+    [ -n "${ESPOCRM_WEEK_START-}" ] && bin/command config:set "weekStart" "$ESPOCRM_WEEK_START" --type=int
+    [ -n "${ESPOCRM_DEFAULT_CURRENCY-}" ] && bin/command config:set "defaultCurrency" "$ESPOCRM_DEFAULT_CURRENCY"
+    [ -n "${ESPOCRM_THOUSAND_SEPARATOR-}" ] && bin/command config:set "thousandSeparator" "$ESPOCRM_THOUSAND_SEPARATOR"
+    [ -n "${ESPOCRM_DECIMAL_MARK-}" ] && bin/command config:set "decimalMark" "$ESPOCRM_DECIMAL_MARK"
+
+    bin/command populate-scheduled-jobs
+    bin/command config:set "jobRunInParallel" "true" --type=bool
+
+    bin/command app-check || {
+        echo >&2 "error: Installation failed: app-check error. Check data/logs/ for details, then restart the container."
+        exit 1
+    }
+
+    bin/command config:set "isInstalled" "true" --type=bool
+
+    echo >&2 "info: Installation completed successfully."
 }
 
 setPermissions() {
-    local owner
-    owner=$(id -u)
-
-    local group
-    group=$(id -g)
-
-    find /var/www/html -type d -exec chmod 755 {} +
-    find /var/www/html -type f -exec chmod 644 {} +
-
-    chown -R $owner:$group /var/www/html
-
-    chown www-data:www-data /var/www/html
     chown -R www-data:www-data "${CUSTOM_RESOURCE_LIST[@]}"
-
-    chmod +x bin/command
 }
 
 setEnvironments() {
@@ -599,6 +235,34 @@ setEnvironments() {
     do
         setEnvValue "${defaultParam}" "${DEFAULTS[$defaultParam]}"
     done
+
+    for optionName in "${!OPTIONAL_PARAMS[@]}"
+    do
+        local varName="${OPTIONAL_PARAMS[$optionName]}"
+        setEnvValue "${varName}" "${!varName-}"
+    done
+}
+
+copyPublicFiles() {
+    if ! awk '{print $2}' /proc/mounts | grep -qxF "/var/www/html/public"; then
+        return
+    fi
+
+    echo >&2 "info: Copying public files."
+
+    rm -rf ./public/*
+    cp -a /usr/src/espocrm/public/. ./public/
+}
+
+copyClientFiles() {
+    if ! awk '{print $2}' /proc/mounts | grep -qxF "/var/www/html/client"; then
+        return
+    fi
+
+    echo >&2 "info: Copying client files."
+
+    find ./client/ -mindepth 1 -maxdepth 1 ! -name 'custom' -exec rm -rf {} +
+    cp -a /usr/src/espocrm/client/. ./client/
 }
 
 warnInsecureCredentials() {
@@ -628,15 +292,31 @@ warnInsecureCredentials() {
     echo >&2 '****************************************************'
 }
 
+warnLegacyInstallation() {
+    if ! isLegacy; then
+        return
+    fi
+
+    echo >&2 "warning: LEGACY INSTALLATION METHOD DETECTED."
+    echo >&2 "warning: Do not mount /var/www/html directly. Instead, mount the following directories separately:"
+    echo >&2 "warning:   /var/www/html/custom"
+    echo >&2 "warning:   /var/www/html/data"
+    echo >&2 "warning:   /var/www/html/client/custom"
+    echo >&2 "warning: No further EspoCRM upgrades will be available."
+    echo >&2 "warning: See https://docs.espocrm.com/administration/docker/installation/#migration-to-espocrm-10"
+
+    if [ ! -f bin/command ]; then
+        echo >&2 "error: Container startup aborted. Migrate to the supported volume layout shown above and restart."
+        exit 1
+    fi
+}
+
 # ------------------------- START -------------------------------------
 # Global variables
-SOURCE_FILES="/usr/src/espocrm"
-
 CUSTOM_RESOURCE_LIST=(
-    "/var/www/html/data"
-    "/var/www/html/custom"
-    "/var/www/html/client/custom"
-    "/var/www/html/install/config.php"
+    "./data"
+    "./custom"
+    "./client/custom"
 )
 
 declare -A DEFAULTS=(
@@ -664,11 +344,13 @@ declare -A OPTIONAL_PARAMS=(
 )
 
 setEnvironments
+
 warnInsecureCredentials
+warnLegacyInstallation
 
 start
 
-applyConfigEnvironments
+applyConfigEnv
 # ------------------------- END -------------------------------------
 
 exec "$@"

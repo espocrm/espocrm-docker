@@ -111,17 +111,28 @@ RUN { \
     echo 'date.timezone=UTC'; \
 } > ${PHP_INI_DIR}/conf.d/espocrm.ini
 
-ENV ESPOCRM_VERSION 9.3.10
-ENV ESPOCRM_SHA256 eea5b47ecb7e12011f862f449c3b196b6dd40ad8b80c0e6c610b7b6bb6f31b5d
+ENV ESPOCRM_VERSION 10.0.0
+ENV ESPOCRM_SHA256 a5690c11da1b4e824ad94b9e8fd4e1a5e780b1a6debc197a8a21c6dfdb341dc1
 
 WORKDIR /var/www/html
 
 RUN set -eux; \
-    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-9.3.10.zip" -o EspoCRM.zip; \
+    curl -fSL "https://www.espocrm.com/downloads/EspoCRM-10.0.0.zip" -o EspoCRM.zip; \
     echo "${ESPOCRM_SHA256} *EspoCRM.zip" | sha256sum -c -; \
     unzip -q EspoCRM.zip -d /usr/src; \
-    mv "/usr/src/EspoCRM-${ESPOCRM_VERSION}" /usr/src/espocrm; \
-    rm EspoCRM.zip
+    cp -a "/usr/src/EspoCRM-${ESPOCRM_VERSION}/." /var/www/html/; \
+    rm -rf /usr/src/EspoCRM*; \
+    mkdir -p /usr/src/espocrm; \
+    cp -a ./client/ /usr/src/espocrm/; \
+    cp -a ./public/ /usr/src/espocrm/
+
+RUN set -eux; \
+    rm -rf ./install; \
+    find . -type d -exec chmod 755 {} +; \
+    find . -type f -exec chmod 644 {} +; \
+    chown -R root:root . /usr/src/espocrm; \
+    chown -R www-data:www-data ./data ./custom ./client/custom; \
+    chmod +x ./bin/command
 
 COPY ./docker-*.sh  /usr/local/bin/
 
