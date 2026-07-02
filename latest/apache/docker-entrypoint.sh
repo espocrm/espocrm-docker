@@ -321,10 +321,10 @@ CUSTOM_RESOURCE_LIST=(
 
 declare -A DEFAULTS=(
     ['ESPOCRM_DATABASE_PLATFORM']='Mysql'
-    ['ESPOCRM_DATABASE_HOST']='mysql'
+    ['ESPOCRM_DATABASE_HOST']='espocrm-db'
     ['ESPOCRM_DATABASE_PORT']=''
     ['ESPOCRM_DATABASE_NAME']='espocrm'
-    ['ESPOCRM_DATABASE_USER']='root'
+    ['ESPOCRM_DATABASE_USER']='espocrm'
     ['ESPOCRM_DATABASE_PASSWORD']='password'
     ['ESPOCRM_ADMIN_USERNAME']='admin'
     ['ESPOCRM_ADMIN_PASSWORD']='password'
