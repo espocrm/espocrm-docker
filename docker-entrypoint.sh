@@ -30,6 +30,8 @@ actionMigrate() {
         exit 1
     fi
 
+    bin/command clear-cache
+
     bin/command migrate || {
         local version
         version="$(bin/command config:get version)"
@@ -39,8 +41,6 @@ actionMigrate() {
         echo >&2 "error:   See https://docs.espocrm.com/administration/docker/installation/#incompatible-customizations"
         exit 1
     }
-
-    bin/command clear-cache
 
     setPermissions
 }
