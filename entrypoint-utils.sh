@@ -3,7 +3,7 @@ CONFIG_PREFIX="ESPOCRM_CONFIG_"
 # This allows containers with /var/www/html directory mounted directly to keep running.
 # To be removed in future releases.
 isLegacy() {
-    awk '{print $2}' /proc/mounts | grep -qxE "/var/www/html"
+    awk '$2 == "/var/www/html" { found = 1; exit 0 } END { if (!found) { exit 1 } }' /proc/mounts
 }
 
 exitIfNotReady() {
