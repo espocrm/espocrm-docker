@@ -220,12 +220,14 @@ declare -A OPTIONAL_PARAMS=(
 
 setEnvironments
 
-warnInsecureCredentials
-warnLegacyInstallation
+if [[ "${1-}" == apache2* ]] || [ "${1-}" = 'php-fpm' ]; then
+    warnInsecureCredentials
+    warnLegacyInstallation
 
-start
+    start
 
-applyConfigEnv
+    applyConfigEnv
+fi
 # ------------------------- END -------------------------------------
 
 exec "$@"
