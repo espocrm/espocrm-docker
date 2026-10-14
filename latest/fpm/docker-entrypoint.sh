@@ -47,7 +47,7 @@ actionMigrate() {
 actionInstall() {
     echo >&2 "info: Running \"install\" action."
 
-    rm -rf ./data/cache
+    [ -d ./data/cache ] && find ./data/cache -mindepth 1 -delete
 
     bin/command config:populate
 
