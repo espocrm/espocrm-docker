@@ -10,11 +10,17 @@ env:
 
 jobs:
   dockerhub:
+    name: Build ${{ matrix.variant }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [apache, fpm, fpm-alpine]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -37,6 +43,7 @@ jobs:
         uses: battila7/get-version-action@v2
 
       - name: Apache Build
+        if: matrix.variant == 'apache'
         uses: docker/build-push-action@v6
         with:
           context: ./latest/apache
@@ -44,82 +51,58 @@ jobs:
           push: true
           labels: ${{ steps.meta.outputs.labels }}
           tags: |
-            espocrm/espocrm:latest
             espocrm/espocrm:${{ steps.get_version.outputs.version }}
             espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}
             espocrm/espocrm:${{ steps.get_version.outputs.major }}
-            espocrm/espocrm:apache
             espocrm/espocrm:${{ steps.get_version.outputs.version }}-apache
             espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-apache
             espocrm/espocrm:${{ steps.get_version.outputs.major }}-apache
-            espocrm/espocrm:apache-trixie
             espocrm/espocrm:${{ steps.get_version.outputs.version }}-apache-trixie
             espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-apache-trixie
             espocrm/espocrm:${{ steps.get_version.outputs.major }}-apache-trixie
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Apache Docker Scout
-        id: apache-scout
-        uses: docker/scout-action@v1
-        with:
-          command: cves
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:apache
-          ignore-unchanged: true
-          only-severities: critical,high
+          cache-from: type=gha,scope=apache
+          cache-to: type=gha,mode=max,scope=apache
 
       - name: FPM Build
-        uses: docker/build-push-action@v4
+        if: matrix.variant == 'fpm'
+        uses: docker/build-push-action@v6
         with:
           context: ./latest/fpm
           platforms: linux/386,linux/amd64,linux/arm/v5,linux/arm/v7,linux/arm64/v8
           push: true
           labels: ${{ steps.meta.outputs.labels }}
           tags: |
-            espocrm/espocrm:fpm
             espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm
             espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-fpm
             espocrm/espocrm:${{ steps.get_version.outputs.major }}-fpm
-            espocrm/espocrm:fpm-trixie
             espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm-trixie
             espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-fpm-trixie
             espocrm/espocrm:${{ steps.get_version.outputs.major }}-fpm-trixie
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: FPM Docker Scout
-        id: fpm-scout
-        uses: docker/scout-action@v1
-        with:
-          command: cves
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:fpm
-          ignore-unchanged: true
-          only-severities: critical,high
+          cache-from: type=gha,scope=fpm
+          cache-to: type=gha,mode=max,scope=fpm
 
       - name: FPM-Alpine Build
-        uses: docker/build-push-action@v4
+        if: matrix.variant == 'fpm-alpine'
+        uses: docker/build-push-action@v6
         with:
           context: ./latest/fpm-alpine
           platforms: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8
           push: true
           labels: ${{ steps.meta.outputs.labels }}
           tags: |
-            espocrm/espocrm:fpm-alpine
             espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm-alpine
             espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-fpm-alpine
             espocrm/espocrm:${{ steps.get_version.outputs.major }}-fpm-alpine
-            espocrm/espocrm:fpm-alpine3.23
             espocrm/espocrm:${{ steps.get_version.outputs.version }}-fpm-alpine3.23
             espocrm/espocrm:${{ steps.get_version.outputs.major }}.${{ steps.get_version.outputs.minor }}-fpm-alpine3.23
             espocrm/espocrm:${{ steps.get_version.outputs.major }}-fpm-alpine3.23
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=fpm-alpine
+          cache-to: type=gha,mode=max,scope=fpm-alpine
 
-      - name: FPM Alpine Docker Scout
-        id: fpm-alpine-scout
+      - name: Docker Scout
         uses: docker/scout-action@v1
         with:
           command: cves
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:fpm-alpine
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.variant }}
           ignore-unchanged: true
           only-severities: critical,high
