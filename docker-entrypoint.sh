@@ -74,7 +74,7 @@ actionInstall() {
     }
 
     bin/command create-admin-user "$ESPOCRM_ADMIN_USERNAME" >/dev/null 2>&1
-    printf '%s\n' "$ESPOCRM_ADMIN_PASSWORD" | bin/command set-password admin >/dev/null 2>&1
+    printf '%s\n' "$ESPOCRM_ADMIN_PASSWORD" | bin/command set-password "$ESPOCRM_ADMIN_USERNAME" >/dev/null 2>&1
 
     bin/command config:set "language" "$ESPOCRM_LANGUAGE"
     bin/command config:set "siteUrl" "$ESPOCRM_SITE_URL"
